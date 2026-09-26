@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Pix · Quanto vai transferir?</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div class="phone">
+  <div class="status">
+    <span data-relogio>13:40</span>
+    <span class="direita">5G <span class="bateria">60</span></span>
+  </div>
+
+  <div class="conteudo">
+    <div class="topo"><button class="voltar" data-voltar aria-label="Voltar">‹</button></div>
+
+    <h1 id="titulo">Quanto vai transferir?</h1>
+
+    <p class="rotulo">Valor</p>
+    <div class="valor-campo">
+      <span class="moeda">R$</span>
+      <span class="numero" id="valor">0,00</span>
+    </div>
+
+    <div class="saldo">
+      <span>Saldo em conta: R$ <span id="saldo">••••</span></span>
+      <button class="olho" id="alternar-saldo" aria-label="Mostrar saldo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6z"/><circle cx="12" cy="12" r="2.6"/></svg></button>
+    </div>
+
+    <div class="espaco"></div>
+
+    <div class="botao-wrap">
+      <button class="botao desabilitado" id="continuar" disabled>Continuar <span class="seta">›</span></button>
+    </div>
+  </div>
+
+  <div class="teclado" id="teclado"></div>
+</div>
+
+<script src="app.js"></script>
+<script>
+  const dados = lerTransferencia();
+  if (!dados.nome) irPara("index.html");
+  document.getElementById("titulo").textContent = `Quanto vai transferir para ${dados.nome}?`;
+
+  const SALDO = 12045;
+  let centavos = 0;
+  const alvoValor = document.getElementById("valor");
+  const continuar = document.getElementById("continuar");
+
+  function atualizar() {
+    alvoValor.textContent = formatarMoeda(centavos);
+    const valido = centavos > 0;
+    continuar.disabled = !valido;
+    continuar.classList.toggle("desabilitado", !valido);
+  }
+
+  montarTeclado(document.getElementById("teclado"), (tecla) => {
+    if (tecla === "apagar") centavos = Math.floor(centavos / 10);
+    else if (centavos < 100000000) centavos = centavos * 10 + Number(tecla);
+    atualizar();
+  });
+
+  let visivel = false;
+  document.getElementById("alternar-saldo").addEventListener("click", () => {
+    visivel = !visivel;
+    document.getElementById("saldo").textContent = visivel ? formatarMoeda(SALDO) : "••••";
+  });
+
+  continuar.addEventListener("click", () => {
+    salvarTransferencia({ valor: centavos });
+    irPara("conta.html");
+  });
+
+  atualizar();
+</script>
+</body>
+</html>

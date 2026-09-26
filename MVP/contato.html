@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Pix · Transferência para</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div class="phone">
+  <div class="status">
+    <span data-relogio>13:40</span>
+    <span class="direita">5G <span class="bateria">60</span></span>
+  </div>
+
+  <div class="conteudo">
+    <div class="topo"><button class="voltar" data-voltar aria-label="Voltar">‹</button></div>
+
+    <p class="rotulo">Transferência para</p>
+    <h1 id="nome" style="margin-top:2px">—</h1>
+
+    <dl style="margin:0">
+      <div class="dado"><dt>Chave Pix</dt><dd id="chave">—</dd></div>
+      <div class="dado"><dt>CPF</dt><dd id="cpf">—</dd></div>
+      <div class="dado"><dt>Instituição</dt><dd id="instituicao">—</dd></div>
+    </dl>
+
+    <div class="linha-toggle">
+      <span>Salvar contato</span>
+      <label class="switch"><input type="checkbox" id="salvar" /><span class="trilho"></span></label>
+    </div>
+
+    <div class="espaco"></div>
+
+    <div class="botao-wrap">
+      <button class="botao" id="continuar">Continuar <span class="seta">›</span></button>
+    </div>
+  </div>
+
+  <div class="barra-nav"><span class="traço"></span></div>
+</div>
+
+<script src="app.js"></script>
+<script>
+  const dados = lerTransferencia();
+  if (!dados.nome) irPara("index.html");
+  document.getElementById("nome").textContent = dados.nome;
+  document.getElementById("chave").textContent = dados.chavePix;
+  document.getElementById("cpf").textContent = dados.cpf;
+  document.getElementById("instituicao").textContent = dados.instituicao;
+
+  document.getElementById("continuar").addEventListener("click", () => {
+    salvarTransferencia({ salvarContato: document.getElementById("salvar").checked });
+    irPara("valor.html");
+  });
+</script>
+</body>
+</html>

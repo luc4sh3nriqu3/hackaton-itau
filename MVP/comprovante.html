@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Pix · Comprovante</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div class="phone">
+  <div class="status">
+    <span data-relogio>13:43</span>
+    <span class="direita">5G <span class="bateria">57</span></span>
+  </div>
+
+  <div class="conteudo">
+    <div class="sucesso">
+      <div class="circulo">✓</div>
+      <h1 id="titulo">Transferência realizada</h1>
+      <p class="subtitulo" id="subtitulo">Comprovante disponível no app</p>
+    </div>
+
+    <div class="resumo"><span class="chave">Valor</span><span class="conteudo-valor">R$ <span id="valor">0,00</span></span></div>
+    <div class="resumo"><span class="chave">Para</span><span class="conteudo-valor" id="nome" style="text-align:right;max-width:60%">—</span></div>
+    <div class="resumo"><span class="chave">Chave Pix</span><span class="conteudo-valor" id="chave">—</span></div>
+    <div class="resumo"><span class="chave">Instituição</span><span class="conteudo-valor" id="instituicao" style="text-align:right;max-width:60%">—</span></div>
+    <div class="resumo"><span class="chave">Data</span><span class="conteudo-valor" id="data">Hoje</span></div>
+    <div class="resumo"><span class="chave">ID da transação</span><span class="conteudo-valor" id="id">—</span></div>
+
+    <div class="espaco"></div>
+
+    <button class="botao" style="margin-top:24px" onclick="alert('Compartilhamento indisponível no protótipo.')">Compartilhar comprovante</button>
+    <button class="botao secundario" style="margin-top:12px" id="inicio">Voltar ao início</button>
+  </div>
+
+  <div class="barra-nav"><span class="traço"></span></div>
+</div>
+
+<script src="app.js"></script>
+<script>
+  const dados = lerTransferencia();
+  if (!dados.nome || !dados.valor) irPara("index.html");
+
+  document.getElementById("valor").textContent = formatarMoeda(dados.valor);
+  document.getElementById("nome").textContent = dados.nome;
+  document.getElementById("chave").textContent = dados.chavePix;
+  document.getElementById("instituicao").textContent = dados.instituicao;
+  document.getElementById("data").textContent =
+    dados.data === "Hoje" ? new Date().toLocaleDateString("pt-BR") : dados.data;
+  document.getElementById("id").textContent = "E" + Math.random().toString().slice(2, 14);
+
+  document.getElementById("inicio").addEventListener("click", () => {
+    limparTransferencia();
+    irPara("index.html");
+  });
+</script>
+</body>
+</html>

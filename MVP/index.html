@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Pix · Para quem você vai transferir?</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div class="phone">
+  <div class="status">
+    <span data-relogio>13:39</span>
+    <span class="direita">5G <span class="bateria">60</span></span>
+  </div>
+
+  <div class="conteudo">
+    <div class="topo"><button class="voltar" data-voltar aria-label="Voltar">‹</button></div>
+
+    <h1>Para quem você vai transferir?</h1>
+
+    <input class="campo" id="busca" placeholder="Digite a chave Pix ou nome" autocomplete="off" />
+
+    <div id="sugestoes" style="margin-top:8px"></div>
+
+    <button class="lista-item" style="margin-top:20px" onclick="alert('Leitura de QR Code indisponível no protótipo.')">
+      <span class="icone"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="6" width="18" height="13" rx="3"/><circle cx="12" cy="12.5" r="3.2"/><path d="M9 6l1.5-2h3L15 6"/></svg></span>
+      <span class="texto"><strong>Ler QR Code</strong></span>
+      <span class="seta">›</span>
+    </button>
+    <button class="lista-item" onclick="alert('Informar agência e conta indisponível no protótipo.')">
+      <span class="icone"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-5 9 5"/><path d="M5 9v9M19 9v9M9 9v9M15 9v9M3 20h18"/></svg></span>
+      <span class="texto"><strong>Informar agência e conta</strong></span>
+      <span class="seta">›</span>
+    </button>
+
+    <div class="espaco"></div>
+
+    <div class="botao-wrap">
+      <button class="botao desabilitado" id="continuar" disabled>Continuar <span class="seta">›</span></button>
+    </div>
+  </div>
+
+  <div class="barra-nav"><span class="traço"></span></div>
+</div>
+
+<script src="app.js"></script>
+<script>
+  const contatos = [
+    { nome: "Lucas Henrique Amorim Da Silva", chavePix: "(12) 9 9777-4728", cpf: "***.203.418-**", instituicao: "Nu Pagamentos S.A. - Instituição De Pagamento" },
+    { nome: "Felipe Kenji Ouba Fukuzono", chavePix: "felipe.kenji@email.com", cpf: "***.884.207-**", instituicao: "Itaú Unibanco S.A." },
+  ];
+
+  const busca = document.getElementById("busca");
+  const sugestoes = document.getElementById("sugestoes");
+  const continuar = document.getElementById("continuar");
+  let selecionado = null;
+
+  function escolher(contato) {
+    selecionado = contato;
+    continuar.disabled = false;
+    continuar.classList.remove("desabilitado");
+  }
+
+  function renderizar() {
+    const termo = busca.value.trim().toLowerCase();
+    selecionado = null;
+    continuar.disabled = true;
+    continuar.classList.add("desabilitado");
+
+    if (!termo) {
+      sugestoes.innerHTML = "";
+      return;
+    }
+
+    const achados = contatos.filter(
+      (c) => c.nome.toLowerCase().includes(termo) || c.chavePix.toLowerCase().includes(termo)
+    );
+    const lista = achados.length ? achados : [{ ...contatos[0], nome: contatos[0].nome, chavePix: busca.value.trim() }];
+
+    sugestoes.innerHTML = lista
+      .map(
+        (c, i) => `<button class="lista-item" data-indice="${i}">
+            <span class="icone">${c.nome.charAt(0)}</span>
+            <span class="texto"><strong>${c.nome}</strong><span>${c.chavePix}</span></span>
+            <span class="seta">›</span>
+          </button>`
+      )
+      .join("");
+
+    sugestoes.querySelectorAll("[data-indice]").forEach((botao) => {
+      botao.addEventListener("click", () => {
+        escolher(lista[Number(botao.dataset.indice)]);
+        salvarTransferencia(lista[Number(botao.dataset.indice)]);
+        irPara("contato.html");
+      });
+    });
+
+    escolher(lista[0]);
+  }
+
+  busca.addEventListener("input", renderizar);
+  continuar.addEventListener("click", () => {
+    if (!selecionado) return;
+    salvarTransferencia(selecionado);
+    irPara("contato.html");
+  });
+
+  limparTransferencia();
+  busca.focus();
+</script>
+</body>
+</html>

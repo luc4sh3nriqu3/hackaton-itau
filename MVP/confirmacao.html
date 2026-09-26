@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Pix · Confirmar transferência</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div class="phone">
+  <div class="status">
+    <span data-relogio>13:43</span>
+    <span class="direita">5G <span class="bateria">57</span></span>
+  </div>
+
+  <div class="conteudo">
+    <div class="topo"><button class="voltar" data-voltar aria-label="Voltar">‹</button></div>
+
+    <h1 id="titulo">Transferir?</h1>
+
+    <div class="cards">
+      <button class="card" id="card-data">
+        <span class="simbolo"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></svg></span>
+        <span class="titulo">Data</span>
+        <span class="valor" id="valor-data">Hoje</span>
+      </button>
+      <button class="card" id="card-repetir">
+        <span class="simbolo"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 12a8 8 0 1 1-2.6-5.9"/><path d="M20 4v4h-4"/><path d="M12 8v4l2.5 2"/></svg></span>
+        <span class="titulo">Repetir</span>
+        <span class="valor" id="valor-repetir">Não</span>
+      </button>
+      <button class="card" id="card-mensagem">
+        <span class="simbolo"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="14" rx="3"/></svg></span>
+        <span class="titulo">Mensagem</span>
+        <span class="valor" id="valor-mensagem"></span>
+      </button>
+    </div>
+
+    <div class="resumo">
+      <span class="chave">Valor</span>
+      <span class="conteudo-valor">R$ <span id="valor-total">0,00</span> <span class="seta">›</span></span>
+    </div>
+    <div class="resumo">
+      <span class="chave">De</span>
+      <span class="conteudo-valor" id="origem">Conta Itaú</span>
+    </div>
+    <div class="resumo">
+      <span class="chave">Chave Pix</span>
+      <span class="conteudo-valor" id="chave-pix">—</span>
+    </div>
+    <div class="resumo">
+      <span class="chave">Instituição</span>
+      <span class="conteudo-valor" id="instituicao" style="text-align:right;max-width:60%">—</span>
+    </div>
+
+    <div class="espaco"></div>
+
+    <div class="botao-wrap" style="margin-top:24px">
+      <button class="botao" id="transferir">Transferir <span class="seta">›</span></button>
+    </div>
+  </div>
+
+  <div class="overlay" id="overlay">
+    <div class="sheet">
+      <div class="sheet-topo">
+        <h2>Fique atento!</h2>
+        <button class="fechar" id="fechar" aria-label="Fechar">✕</button>
+      </div>
+      <p id="texto-aviso"></p>
+      <button class="botao" id="continuar-assim">Continuar mesmo assim</button>
+      <button class="botao secundario" id="cancelar">Cancelar transferência</button>
+    </div>
+  </div>
+
+  <div class="barra-nav"><span class="traço"></span></div>
+</div>
+
+<script src="app.js"></script>
+<script>
+  const dados = lerTransferencia();
+  if (!dados.nome || !dados.valor) irPara("index.html");
+
+  const valorFormatado = formatarMoeda(dados.valor);
+  document.getElementById("titulo").textContent = `Transferir R$ ${valorFormatado} para ${dados.nome}?`;
+  document.getElementById("valor-total").textContent = valorFormatado;
+  document.getElementById("chave-pix").textContent = dados.chavePix;
+  document.getElementById("instituicao").textContent = dados.instituicao;
+  document.getElementById("origem").textContent = dados.origem || "Conta Itaú";
+  document.getElementById("valor-data").textContent = dados.data;
+  document.getElementById("valor-repetir").textContent = dados.repetir;
+  document.getElementById("valor-mensagem").textContent = dados.mensagem || "";
+
+  document.getElementById("card-data").addEventListener("click", () => {
+    const nova = prompt("Data da transferência (ex.: Hoje, 30/09/2026)", dados.data);
+    if (nova) {
+      dados.data = nova;
+      salvarTransferencia({ data: nova });
+      document.getElementById("valor-data").textContent = nova;
+    }
+  });
+
+  document.getElementById("card-repetir").addEventListener("click", () => {
+    dados.repetir = dados.repetir === "Não" ? "Mensal" : "Não";
+    salvarTransferencia({ repetir: dados.repetir });
+    document.getElementById("valor-repetir").textContent = dados.repetir;
+  });
+
+  document.getElementById("card-mensagem").addEventListener("click", () => {
+    const texto = prompt("Mensagem para o destinatário", dados.mensagem);
+    if (texto !== null) {
+      dados.mensagem = texto;
+      salvarTransferencia({ mensagem: texto });
+      document.getElementById("valor-mensagem").textContent = texto;
+    }
+  });
+
+  const SALDO_CONTA = 0;
+  const overlay = document.getElementById("overlay");
+
+  document.getElementById("transferir").addEventListener("click", () => {
+    const falta = dados.valor - SALDO_CONTA;
+    if (falta > 0) {
+      document.getElementById("texto-aviso").textContent =
+        `Você pode concluir esta transação utilizando R$ ${formatarMoeda(falta)} do seu Limite da Conta. ` +
+        `É importante lembrar que é um crédito para usar em imprevistos e por pouco tempo. ` +
+        `Ao cobrir o valor utilizado ainda hoje, você não terá qualquer custo.`;
+      overlay.classList.add("aberto");
+      return;
+    }
+    irPara("comprovante.html");
+  });
+
+  document.getElementById("fechar").addEventListener("click", () => overlay.classList.remove("aberto"));
+  document.getElementById("continuar-assim").addEventListener("click", () => irPara("comprovante.html"));
+  document.getElementById("cancelar").addEventListener("click", () => {
+    limparTransferencia();
+    irPara("index.html");
+  });
+</script>
+</body>
+</html>

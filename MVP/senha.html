@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Pix · Senha de transação</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div class="phone">
+  <div class="status">
+    <span data-relogio>13:40</span>
+    <span class="direita">5G <span class="bateria">61</span></span>
+  </div>
+
+  <div class="conteudo" style="text-align:center">
+    <div style="font-size:44px;margin:28px 0 18px"><svg width="54" height="54" viewBox="0 0 24 24" fill="none" stroke="#ec7000" stroke-width="1.6"><rect x="4" y="10" width="16" height="11" rx="3" fill="#ec7000" stroke="none"/><path d="M8 10V7a4 4 0 0 1 8 0v3" stroke="#1c1c1c"/><circle cx="12" cy="15.5" r="1.6" fill="#fff" stroke="none"/></svg></div>
+    <h1 style="margin-bottom:10px">Digite a senha de transação</h1>
+    <p style="color:var(--cinza);font-size:15px;margin:0 22px">
+      É usada para autorizar operações no app e realizar compras com seu cartão de débito
+    </p>
+
+    <div class="pontos" id="pontos">
+      <span class="ponto"></span><span class="ponto"></span><span class="ponto"></span>
+      <span class="ponto"></span><span class="ponto"></span><span class="ponto"></span>
+    </div>
+
+    <button class="link" onclick="alert('Recuperação de senha indisponível no protótipo.')">Esqueci minha senha</button>
+
+    <div class="espaco"></div>
+
+    <button class="botao desabilitado" id="continuar" disabled>Continuar</button>
+  </div>
+
+  <div class="teclado" id="teclado"></div>
+</div>
+
+<script src="app.js"></script>
+<script>
+  const dados = lerTransferencia();
+  if (!dados.nome || !dados.valor) irPara("index.html");
+
+  let senha = "";
+  const pontos = [...document.querySelectorAll("#pontos .ponto")];
+  const continuar = document.getElementById("continuar");
+
+  function atualizar() {
+    pontos.forEach((p, i) => p.classList.toggle("cheio", i < senha.length));
+    const completo = senha.length === 6;
+    continuar.disabled = !completo;
+    continuar.classList.toggle("desabilitado", !completo);
+  }
+
+  montarTeclado(document.getElementById("teclado"), (tecla) => {
+    if (tecla === "apagar") senha = senha.slice(0, -1);
+    else if (senha.length < 6) senha += tecla;
+    atualizar();
+    if (senha.length === 6) setTimeout(() => irPara("confirmacao.html"), 250);
+  });
+
+  continuar.addEventListener("click", () => irPara("confirmacao.html"));
+  atualizar();
+</script>
+</body>
+</html>

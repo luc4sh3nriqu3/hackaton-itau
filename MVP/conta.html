@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Pix · Escolha como quer transferir</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div class="phone">
+  <div class="status">
+    <span data-relogio>13:40</span>
+    <span class="direita">5G <span class="bateria">60</span></span>
+  </div>
+
+  <div class="conteudo">
+    <div class="topo">
+      <button class="voltar" data-voltar aria-label="Voltar">‹</button>
+      <button class="olho" id="alternar-saldo" aria-label="Mostrar saldo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6z"/><circle cx="12" cy="12" r="2.6"/></svg></button>
+    </div>
+
+    <h1 id="titulo">Escolha como quer transferir o valor</h1>
+
+    <div class="espaco"></div>
+
+    <button class="lista-item" data-origem="Conta Itaú">
+      <span class="icone itau">itaú</span>
+      <span class="texto"><strong>Conta Itaú</strong><span>Saldo <span class="saldo-texto">0,00</span></span></span>
+      <span class="seta">›</span>
+    </button>
+    <button class="lista-item" data-origem="Open Finance">
+      <span class="icone">↻</span>
+      <span class="texto"><strong>Pagar com outro banco</strong><span>Via Open Finance</span></span>
+      <span class="seta">›</span>
+    </button>
+  </div>
+
+  <div class="barra-nav"><span class="traço"></span></div>
+</div>
+
+<script src="app.js"></script>
+<script>
+  const dados = lerTransferencia();
+  if (!dados.nome || !dados.valor) irPara("index.html");
+  document.getElementById("titulo").textContent = `Escolha como quer transferir o valor de ${formatarMoeda(dados.valor)}`;
+
+  let visivel = true;
+  document.getElementById("alternar-saldo").addEventListener("click", () => {
+    visivel = !visivel;
+    document.querySelectorAll(".saldo-texto").forEach((el) => (el.textContent = visivel ? "0,00" : "••••"));
+  });
+
+  document.querySelectorAll("[data-origem]").forEach((botao) => {
+    botao.addEventListener("click", () => {
+      salvarTransferencia({ origem: botao.dataset.origem });
+      irPara("senha.html");
+    });
+  });
+</script>
+</body>
+</html>
