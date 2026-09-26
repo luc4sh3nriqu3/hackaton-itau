@@ -41,7 +41,7 @@
 <script src="app.js"></script>
 <script>
   const dados = lerTransferencia();
-  if (!dados.nome || !dados.valor) irPara("index.html");
+  if (!dados.nome || !dados.valor) irPara("destinatario.html");
   document.getElementById("titulo").textContent = `Escolha como quer transferir o valor de ${formatarMoeda(dados.valor)}`;
 
   let visivel = true;

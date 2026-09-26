@@ -32,13 +32,25 @@ function formatarMoeda(centavos) {
   return (centavos / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-function irPara(pagina) {
-  window.location.href = pagina;
+function mostrarCarregando() {
+  let carregando = document.querySelector(".carregando");
+  if (!carregando) {
+    carregando = document.createElement("div");
+    carregando.className = "carregando";
+    carregando.innerHTML = '<span class="giro"></span>';
+    (document.querySelector(".phone") || document.body).appendChild(carregando);
+  }
+  requestAnimationFrame(() => carregando.classList.add("visivel"));
+}
+
+function irPara(pagina, espera = 550) {
+  mostrarCarregando();
+  setTimeout(() => (window.location.href = pagina), espera);
 }
 
 function voltar() {
   if (history.length > 1) history.back();
-  else irPara("index.html");
+  else irPara("home.html");
 }
 
 function relogio() {
@@ -74,6 +86,9 @@ function montarTeclado(alvo, aoDigitar) {
 
 document.addEventListener("DOMContentLoaded", () => {
   relogio();
+  document.querySelectorAll("[data-ir]").forEach((el) =>
+    el.addEventListener("click", () => irPara(el.dataset.ir))
+  );
   setInterval(relogio, 20000);
   document.querySelectorAll("[data-voltar]").forEach((botao) => botao.addEventListener("click", voltar));
 });

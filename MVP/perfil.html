@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>itaú · Perfil do cliente</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div class="phone">
+  <div class="status">
+    <span data-relogio>15:00</span>
+    <span class="direita">4G <span class="bateria">63</span></span>
+  </div>
+
+  <div class="conteudo">
+    <div class="topo"><button class="voltar" data-voltar aria-label="Voltar">‹</button></div>
+
+    <div class="perfil-topo" style="padding-top:0">
+      <div class="avatar">FF</div>
+      <div class="nomes">
+        <strong>Felipe Kenji Ouba Fukuzono</strong>
+        <span>CPF •••.327.238-•• · Ag 0001 / CC 12345-6</span>
+      </div>
+    </div>
+
+    <p class="secao-titulo" style="margin-top:12px">Complete sua experiência</p>
+
+    <button class="caixa" data-ir="seguranca.html" style="display:block;width:100%;text-align:left;border:none;font-family:inherit;cursor:pointer">
+      <div class="anel" style="margin-bottom:14px">
+        <svg width="74" height="74" viewBox="0 0 74 74">
+          <circle cx="37" cy="37" r="31" fill="none" stroke="#e0e0e0" stroke-width="6" />
+          <circle cx="37" cy="37" r="31" fill="none" stroke="#ec7000" stroke-width="6" stroke-linecap="round"
+                  stroke-dasharray="155.8 194.8" transform="rotate(-90 37 37)" />
+        </svg>
+        <span>4/5</span>
+      </div>
+      <strong style="display:block;font-size:16px;margin-bottom:4px">Segurança Itaú</strong>
+      <span style="color:var(--cinza);font-size:16px">Ative o Modo Protegido e reforce sua proteção</span>
+    </button>
+
+    <p class="secao-titulo">Configurações</p>
+
+    <div class="blocos tres" style="margin-top:0">
+      <button class="bloco" style="background:var(--cinza-fundo)" onclick="alert('Dados cadastrais indisponível no protótipo.')">
+        <span class="icone-laranja"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg></span>
+        <span>Dados cadastrais</span>
+      </button>
+      <button class="bloco" style="background:var(--cinza-fundo)" data-ir="seguranca.html">
+        <span class="icone-laranja"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l7 3v6c0 4.2-2.9 7.7-7 9-4.1-1.3-7-4.8-7-9V6l7-3z"/></svg></span>
+        <span>Segurança</span>
+      </button>
+      <button class="bloco" style="background:var(--cinza-fundo)" onclick="alert('Mais opções indisponível no protótipo.')">
+        <span class="icone-laranja"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg></span>
+        <span>Mais opções</span>
+      </button>
+    </div>
+
+    <div class="caixa contorno" style="margin-top:26px">
+      <strong style="display:block;font-size:17px;margin-bottom:14px">Queremos saber a sua opinião (opcional)</strong>
+      <p style="margin:0;font-size:16px">O que você achou da experiência da área de perfil do cliente?</p>
+
+      <div class="notas" id="notas"></div>
+
+      <input class="comentario" id="comentario" maxlength="140" placeholder="Quer fazer um comentário? (opcional)" />
+      <div class="contador"><span id="contador">0</span>/140</div>
+
+      <button class="botao desabilitado" id="enviar" disabled style="margin-top:18px;border-radius:10px">Enviar avaliação</button>
+    </div>
+
+    <p class="rodape">
+      Itaú Unibanco Holding S.A., CNPJ 60.872.504/0001-23. Praça Alfredo Egydio de Souza Aranha, 100. Torre Olavo
+      Setubal, Parque Jabaquara. CEP 04344-902 - São Paulo - Brasil<br /><br />
+      Mais informações na aba de Ajuda ou www.itau.com.br<br /><br />
+      7.150.1
+    </p>
+  </div>
+
+  <div class="barra-fixa">
+    <button class="botao secundario" id="sair">
+      Sair do app
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="position:absolute;right:28px"><path d="M14 4h5v16h-5M11 8l4 4-4 4M15 12H4"/></svg>
+    </button>
+  </div>
+
+  <div class="barra-nav"><span class="traço"></span></div>
+</div>
+
+<script src="app.js"></script>
+<script>
+  const rostos = [
+    { nome: "muito ruim", cor: "#f0932b", boca: "M9 17c1.6-1.6 4.4-1.6 6 0", sobrancelha: true },
+    { nome: "ruim", cor: "#fbd14b", boca: "M9.5 16.8c1.4-1.2 3.6-1.2 5 0", lagrima: true },
+    { nome: "regular", cor: "#fbd14b", boca: "M9 16.5h6" },
+    { nome: "boa", cor: "#fbd14b", boca: "M9 15.5c1.5 1.6 4.5 1.6 6 0" },
+    { nome: "muito boa", cor: "#fbd14b", boca: "M9 15c1.6 2.6 4.4 2.6 6 0z", preenchida: true },
+  ];
+
+  const notas = document.getElementById("notas");
+  notas.innerHTML = rostos
+    .map(
+      (r, i) => `<button class="nota" data-nota="${i}">
+        <span class="rosto">
+          <svg width="34" height="34" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10" fill="${r.cor}" />
+            <circle cx="9" cy="10" r="1" fill="#3b2c00" />
+            <circle cx="15" cy="10" r="1" fill="#3b2c00" />
+            ${r.lagrima ? '<path d="M7.6 11.6c.8 1 .8 2.2-.4 2.2s-1.2-1.2-.4-2.2z" fill="#4aa3e8" />' : ""}
+            <path d="${r.boca}" fill="${r.preenchida ? "#a03a2a" : "none"}" stroke="#3b2c00" stroke-width="1.1" stroke-linecap="round" />
+          </svg>
+        </span>
+        ${r.nome}
+      </button>`
+    )
+    .join("");
+
+  const enviar = document.getElementById("enviar");
+  let escolhida = null;
+
+  notas.querySelectorAll("[data-nota]").forEach((botao) => {
+    botao.addEventListener("click", () => {
+      notas.querySelectorAll(".nota").forEach((n) => n.classList.remove("escolhida"));
+      botao.classList.add("escolhida");
+      escolhida = Number(botao.dataset.nota);
+      enviar.disabled = false;
+      enviar.classList.remove("desabilitado");
+    });
+  });
+
+  const comentario = document.getElementById("comentario");
+  comentario.addEventListener("input", () => {
+    document.getElementById("contador").textContent = comentario.value.length;
+  });
+
+  enviar.addEventListener("click", () => {
+    enviar.textContent = "Avaliação enviada. Obrigado!";
+    enviar.disabled = true;
+    enviar.classList.add("desabilitado");
+  });
+
+  document.getElementById("sair").addEventListener("click", () => irPara("index.html"));
+</script>
+</body>
+</html>

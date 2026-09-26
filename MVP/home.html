@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>itaú · Meu Itaú</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div class="phone">
+  <div class="status" style="background:var(--laranja);color:#fff">
+    <span data-relogio>14:47</span>
+    <span class="direita">4G <span class="bateria">65</span></span>
+  </div>
+
+  <div class="cabecalho-laranja">
+    <div class="avatar pequeno" data-ir="perfil.html">FF</div>
+    <span class="nivel">2 Nível 2</span>
+    <div class="acoes">
+      <button aria-label="Buscar"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></button>
+      <button aria-label="Notificações"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 16V11a6 6 0 1 1 12 0v5l1.5 2.5h-15L6 16z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg></button>
+      <button aria-label="Mensagens"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="13" rx="3"/></svg></button>
+    </div>
+  </div>
+
+  <div class="painel">
+    <h2>
+      Meu Itaú
+      <button class="olho" id="alternar-saldo" aria-label="Mostrar saldo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6z"/><circle cx="12" cy="12" r="2.6"/></svg></button>
+    </h2>
+
+    <div class="atalhos">
+      <button class="atalho" data-ir="pix.html">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3l4 4-4 4-4-4 4-4zM12 13l4 4-4 4-4-4 4-4zM3 12l4-4 4 4-4 4-4-4zM13 12l4-4 4 4-4 4-4-4z"/></svg>
+        Pix e transferir
+      </button>
+      <button class="atalho" onclick="alert('Pagar indisponível no protótipo.')">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 5v14M9 5v14M13 5v14M17 5v14"/></svg>
+        Pagar
+      </button>
+      <button class="atalho" onclick="alert('Cartão virtual indisponível no protótipo.')">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-dasharray="4 3"><rect x="3" y="6" width="18" height="12" rx="3"/></svg>
+        Cartão virtual
+      </button>
+      <button class="atalho" onclick="alert('Cofrinhos indisponível no protótipo.')">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" rx="3"/><circle cx="12" cy="12" r="1.6"/></svg>
+        Cofrinhos
+      </button>
+    </div>
+
+    <div class="cartao">
+      <div class="linha">
+        <span style="display:flex;align-items:center;gap:10px"><span class="lista-item-itau" style="background:#14315c;color:#fff;border-radius:6px;padding:3px 6px;font-size:11px;font-weight:700">itaú</span> Conta corrente</span>
+        <span class="seta">›</span>
+      </div>
+      <div class="rotulo-pequeno">Saldo</div>
+      <div class="saldo-valor">R$ <span class="valor-oculto" data-valor="285,11">285,11</span></div>
+      <hr />
+      <div class="linha">
+        <span>Limite disponível</span>
+        <span><strong>R$ <span class="valor-oculto" data-valor="450,00">450,00</span></strong> <span class="seta">›</span></span>
+      </div>
+    </div>
+
+    <div class="cartao">
+      <div class="linha">
+        <span>Itau Multiplo Plat final 0807</span>
+        <span class="seta">›</span>
+      </div>
+      <div class="rotulo-pequeno">Fatura aberta</div>
+      <div class="saldo-valor">R$ <span class="valor-oculto" data-valor="0,00">0,00</span></div>
+    </div>
+  </div>
+
+  <div class="tab-bar">
+    <button class="ativo">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1v-8z"/></svg>
+      Início
+    </button>
+    <button onclick="alert('Extrato indisponível no protótipo.')">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 7h14M5 12h14M5 17h14"/></svg>
+      Extrato
+    </button>
+    <button data-ir="pix.html">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 8h14l-3-3M20 16H6l3 3"/></svg>
+      Pagamentos
+    </button>
+    <button onclick="alert('Pra você indisponível no protótipo.')">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="8" width="18" height="12" rx="2"/><path d="M3 12h18M12 8v12"/></svg>
+      Pra você
+    </button>
+    <button data-ir="perfil.html">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg>
+      Menu
+    </button>
+  </div>
+</div>
+
+<script src="app.js"></script>
+<script>
+  let visivel = true;
+  document.getElementById("alternar-saldo").addEventListener("click", () => {
+    visivel = !visivel;
+    document.querySelectorAll(".valor-oculto").forEach((el) => {
+      el.textContent = visivel ? el.dataset.valor : "•••••";
+    });
+  });
+</script>
+</body>
+</html>

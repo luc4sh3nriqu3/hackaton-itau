@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>itaú · Segurança Itaú</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div class="phone">
+  <div class="status">
+    <span data-relogio>15:00</span>
+    <span class="direita">4G <span class="bateria">63</span></span>
+  </div>
+
+  <div class="conteudo">
+    <div class="topo">
+      <button class="voltar" data-voltar aria-label="Voltar">‹</button>
+      <button class="olho" onclick="alert('Ajuda indisponível no protótipo.')" aria-label="Ajuda">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.4 2.3c-.6.3-.9.8-.9 1.5v.2"/><circle cx="12" cy="17" r=".8" fill="currentColor"/></svg>
+      </button>
+    </div>
+
+    <h1>Segurança Itaú</h1>
+
+    <button class="caixa contorno" style="display:flex;align-items:center;gap:16px;width:100%;text-align:left;font-family:inherit;cursor:pointer" onclick="alert('Ajuda de emergência indisponível no protótipo.')">
+      <span style="color:#d62222">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l8 3.5v6C20 17 16.4 20.9 12 22c-4.4-1.1-8-5-8-10.5v-6L12 2z"/><path d="M12 7v6" stroke="#fff" stroke-width="1.8"/><circle cx="12" cy="16.4" r="1" fill="#fff"/></svg>
+      </span>
+      <span class="conteudo-item"><strong>Golpe, perda ou roubo</strong><span>Ajuda de emergência 24 horas</span></span>
+      <span class="seta">›</span>
+    </button>
+
+    <div class="caixa" style="margin-top:22px">
+      <div class="progresso">
+        <div class="anel">
+          <svg width="74" height="74" viewBox="0 0 74 74">
+            <circle cx="37" cy="37" r="31" fill="none" stroke="#e0e0e0" stroke-width="6" />
+            <circle cx="37" cy="37" r="31" fill="none" stroke="#d62222" stroke-width="6" stroke-linecap="round"
+                    stroke-dasharray="155.8 194.8" transform="rotate(-90 37 37)" />
+          </svg>
+          <span>4/5</span>
+        </div>
+        <strong style="font-size:19px">Aumente seu nível de proteção extra</strong>
+      </div>
+
+      <div style="margin-top:18px">
+        <div class="linha-item">
+          <span class="marca-ok">✓</span>
+          <span class="conteudo-item">Localização</span>
+          <label class="switch"><input type="checkbox" checked /><span class="trilho"></span></label>
+        </div>
+        <button class="linha-item" onclick="alert('Modo Protegido indisponível no protótipo.')">
+          <span class="marca-erro">✕</span>
+          <span class="conteudo-item"><strong>Modo Protegido</strong><span>Mais proteção para o app em caso de roubo e furto</span></span>
+          <span class="seta">›</span>
+        </button>
+        <button class="linha-item" onclick="alert('Dispositivo autorizado indisponível no protótipo.')">
+          <span class="marca-ok">✓</span>
+          <span class="conteudo-item">Dispositivo autorizado</span>
+          <span class="seta">›</span>
+        </button>
+        <div class="linha-item">
+          <span class="marca-ok">✓</span>
+          <span class="conteudo-item">Reconhecimento facial</span>
+        </div>
+        <div class="linha-item">
+          <span class="marca-ok">✓</span>
+          <span class="conteudo-item"><strong>Proteções automáticas Itaú</strong><span>Tecnologia especializada em ações antifraude e golpes</span></span>
+        </div>
+      </div>
+    </div>
+
+    <p class="secao-titulo">Gerenciar proteções</p>
+
+    <button class="linha-item" onclick="alert('Meus dispositivos indisponível no protótipo.')">
+      <span><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="7" y="3" width="10" height="18" rx="2.5"/></svg></span>
+      <span class="conteudo-item"><strong>Meus dispositivos</strong><span>Consulte e edite seus dispositivos com iToken</span></span>
+      <span class="seta">›</span>
+    </button>
+    <button class="linha-item" onclick="alert('Limites transacionais indisponível no protótipo.')">
+      <span><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 8h14l-3-3M20 16H6l3 3"/></svg></span>
+      <span class="conteudo-item"><strong>Limites transacionais</strong><span>Defina limites para proteger suas transações</span></span>
+      <span class="seta">›</span>
+    </button>
+    <button class="linha-item" onclick="alert('Limite do cartão indisponível no protótipo.')">
+      <span><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="6" width="18" height="10" rx="2"/><path d="M12 18l2 3h-4l2-3z"/></svg></span>
+      <span class="conteudo-item"><strong>Limite do cartão</strong><span>Ajuste o limite disponível para uso nos seus cartões</span></span>
+      <span class="seta">›</span>
+    </button>
+
+    <p class="secao-titulo">Gerenciar minhas senhas e acessos</p>
+
+    <button class="linha-item" onclick="alert('Acesso com digital indisponível no protótipo.')">
+      <span><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 11a7 7 0 0 1 14 0M8 12a4 4 0 0 1 8 0v4M12 12v6M16 17v2"/></svg></span>
+      <span class="conteudo-item"><strong>Acesso com digital</strong></span>
+      <span class="seta">›</span>
+    </button>
+    <button class="linha-item" onclick="alert('iToken indisponível no protótipo.')">
+      <span><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><ellipse cx="12" cy="12" rx="9" ry="6"/><circle cx="12" cy="12" r="2"/></svg></span>
+      <span class="conteudo-item"><strong>Acessar código iToken</strong></span>
+      <span class="seta">›</span>
+    </button>
+    <button class="linha-item" onclick="alert('Gerenciar senhas indisponível no protótipo.')">
+      <span><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="8" width="18" height="8" rx="2"/><circle cx="8" cy="12" r=".9" fill="currentColor"/><circle cx="12" cy="12" r=".9" fill="currentColor"/><circle cx="16" cy="12" r=".9" fill="currentColor"/></svg></span>
+      <span class="conteudo-item"><strong>Gerenciar senhas</strong></span>
+      <span class="seta">›</span>
+    </button>
+    <button class="linha-item" onclick="alert('App Itaú no computador indisponível no protótipo.')">
+      <span><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 20h8"/></svg></span>
+      <span class="conteudo-item"><strong>App Itaú no computador</strong></span>
+      <span class="seta">›</span>
+    </button>
+
+    <p class="secao-titulo">Proteger meus cartões</p>
+
+    <button class="linha-item" onclick="alert('Segurança do cartão indisponível no protótipo.')">
+      <span><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3l7 3v6c0 4.2-2.9 7.7-7 9-4.1-1.3-7-4.8-7-9V6l7-3z"/></svg></span>
+      <span class="conteudo-item"><strong>Segurança do cartão</strong><span>Gerencie aproximação, bloqueio temporário, compras online e mais</span></span>
+      <span style="background:#333;color:#fff;border-radius:6px;padding:4px 8px;font-size:12px">Nova</span>
+      <span class="seta">›</span>
+    </button>
+    <button class="linha-item" onclick="alert('Carteiras digitais indisponível no protótipo.')">
+      <span><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-dasharray="3 2"><rect x="3" y="6" width="18" height="12" rx="2"/></svg></span>
+      <span class="conteudo-item"><strong>Carteiras digitais</strong><span>Pague com o cartão no celular: aproximou, validou, pagou</span></span>
+      <span class="seta">›</span>
+    </button>
+
+    <div style="height:18px"></div>
+  </div>
+
+  <div class="barra-nav"><span class="traço"></span></div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

@@ -78,7 +78,7 @@
 <script src="app.js"></script>
 <script>
   const dados = lerTransferencia();
-  if (!dados.nome || !dados.valor) irPara("index.html");
+  if (!dados.nome || !dados.valor) irPara("destinatario.html");
 
   const valorFormatado = formatarMoeda(dados.valor);
   document.getElementById("titulo").textContent = `Transferir R$ ${valorFormatado} para ${dados.nome}?`;
@@ -134,7 +134,7 @@
   document.getElementById("continuar-assim").addEventListener("click", () => irPara("comprovante.html"));
   document.getElementById("cancelar").addEventListener("click", () => {
     limparTransferencia();
-    irPara("index.html");
+    irPara("pix.html");
   });
 </script>
 </body>

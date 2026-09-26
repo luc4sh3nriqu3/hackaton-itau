@@ -42,7 +42,7 @@
 <script src="app.js"></script>
 <script>
   const dados = lerTransferencia();
-  if (!dados.nome) irPara("index.html");
+  if (!dados.nome) irPara("destinatario.html");
   document.getElementById("titulo").textContent = `Quanto vai transferir para ${dados.nome}?`;
 
   const SALDO = 12045;
