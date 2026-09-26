@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>ia.itaú · Avaliação de segurança</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div class="phone">
+  <div class="status">
+    <span data-relogio>14:49</span>
+    <span class="direita">4G <span class="bateria">65</span></span>
+  </div>
+
+  <div class="chat-topo">
+    <span class="ia-marca">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="#ec7000"><path d="M12 2l2.2 6.3L20.5 10l-6.3 2.2L12 18.5l-2.2-6.3L3.5 10l6.3-1.7L12 2z"/></svg>
+      ia.<strong>itaú</strong>
+    </span>
+    <button class="fechar" id="fechar" aria-label="Fechar">✕</button>
+  </div>
+
+  <div class="conteudo chat" id="chat"></div>
+
+  <div class="chat-opcoes" id="opcoes"></div>
+
+  <div class="chat-rodape">
+    <div class="chat-campo">
+      <input placeholder="Digite aqui" disabled />
+      <span class="enviar">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ec7000" stroke-width="1.8"><path d="M4 12l16-8-6 8 6 8-16-8z"/></svg>
+      </span>
+    </div>
+    <p class="chat-aviso">Resposta gerada por IA e pode ter informações imprecisas.</p>
+  </div>
+
+  <div class="barra-nav"><span class="traço"></span></div>
+</div>
+
+<script src="app.js"></script>
+<script>
+  const dados = lerTransferencia();
+  const nome = dados.nome || "esse destinatário";
+  const valor = dados.valor ? "R$ " + formatarMoeda(dados.valor) : "esse valor";
+
+  const roteiro = [
+    {
+      titulo: "Vamos avaliar essa transferência juntos",
+      texto:
+        `Identifiquei um padrão incomum no Pix de ${valor} para ${nome}. ` +
+        `Pra começar: você conhece pessoalmente quem vai receber?`,
+      opcoes: ["Sim, conheço", "Conheço só pela internet", "Não conheço"],
+    },
+    {
+      titulo: "Entendi. Agora sobre o motivo",
+      texto: "Como surgiu esse pedido de pagamento?",
+      opcoes: [
+        "Eu mesmo procurei o vendedor",
+        "Recebi mensagem no WhatsApp",
+        "Me ligaram dizendo ser do banco",
+        "Vi um anúncio em rede social",
+      ],
+    },
+    {
+      titulo: "Última pergunta",
+      texto: "Alguém está te pressionando para concluir agora ou pediu sigilo sobre esse Pix?",
+      opcoes: ["Não, estou tranquilo", "Sim, estão com pressa", "Pediram para não contar a ninguém"],
+    },
+  ];
+
+  const chat = document.getElementById("chat");
+  const opcoes = document.getElementById("opcoes");
+  let passo = 0;
+  let risco = 0;
+
+  function horario() {
+    const agora = new Date();
+    return `${String(agora.getHours()).padStart(2, "0")}:${String(agora.getMinutes()).padStart(2, "0")}`;
+  }
+
+  function rolar() {
+    requestAnimationFrame(() => (chat.scrollTop = chat.scrollHeight));
+  }
+
+  function balaoBot(titulo, texto) {
+    const bloco = document.createElement("div");
+    bloco.className = "msg-bot";
+    bloco.innerHTML = `
+      <span class="faisca"><svg width="18" height="18" viewBox="0 0 24 24" fill="#ec7000"><path d="M12 2l2.2 6.3L20.5 10l-6.3 2.2L12 18.5l-2.2-6.3L3.5 10l6.3-1.7L12 2z"/></svg></span>
+      ${titulo ? `<strong>${titulo}</strong>` : ""}
+      <p>${texto}</p>`;
+    chat.appendChild(bloco);
+    rolar();
+  }
+
+  function balaoUsuario(texto) {
+    const bloco = document.createElement("div");
+    bloco.className = "msg-usuario";
+    bloco.innerHTML = `<div class="bolha">${texto}</div><span class="hora">${horario()} <span class="checks">✓✓</span></span>`;
+    chat.appendChild(bloco);
+    rolar();
+  }
+
+  function digitando() {
+    const bloco = document.createElement("div");
+    bloco.className = "msg-bot digitando";
+    bloco.innerHTML = '<span class="ponto"></span><span class="ponto"></span><span class="ponto"></span>';
+    chat.appendChild(bloco);
+    rolar();
+    return bloco;
+  }
+
+  function mostrarOpcoes(lista) {
+    opcoes.innerHTML = "";
+    lista.forEach((texto, i) => {
+      const botao = document.createElement("button");
+      botao.className = "chip";
+      botao.textContent = texto;
+      botao.addEventListener("click", () => responder(texto, i));
+      opcoes.appendChild(botao);
+    });
+  }
+
+  function perguntar() {
+    const atual = roteiro[passo];
+    opcoes.innerHTML = "";
+    const espera = digitando();
+    setTimeout(() => {
+      espera.remove();
+      balaoBot(atual.titulo, atual.texto);
+      mostrarOpcoes(atual.opcoes);
+    }, 900);
+  }
+
+  function responder(texto, indice) {
+    balaoUsuario(texto);
+    opcoes.innerHTML = "";
+    if (indice > 0) risco += indice;
+    passo += 1;
+    if (passo < roteiro.length) {
+      setTimeout(perguntar, 500);
+      return;
+    }
+    setTimeout(concluir, 700);
+  }
+
+  function concluir() {
+    const espera = digitando();
+    setTimeout(() => {
+      espera.remove();
+      if (risco >= 2) {
+        balaoBot(
+          "Risco alto de golpe",
+          `As respostas indicam sinais clássicos de fraude: contato que você não conhece, pedido vindo de fora e pressão pra pagar. ` +
+            `Minha recomendação é <strong>não concluir</strong> esse Pix de ${valor} agora.`
+        );
+        mostrarFinal(true);
+      } else {
+        balaoBot(
+          "Risco baixo",
+          `Nenhum sinal forte de golpe nas suas respostas. Ainda assim, confira o nome e a chave antes de concluir o Pix de ${valor}.`
+        );
+        mostrarFinal(false);
+      }
+    }, 1000);
+  }
+
+  function mostrarFinal(alto) {
+    opcoes.innerHTML = "";
+    const cancelar = document.createElement("button");
+    cancelar.className = alto ? "chip destaque" : "chip";
+    cancelar.textContent = "Cancelar transferência";
+    cancelar.addEventListener("click", () => {
+      limparTransferencia();
+      irPara("pix.html");
+    });
+
+    const seguir = document.createElement("button");
+    seguir.className = "chip";
+    seguir.textContent = "Concluir mesmo assim";
+    seguir.addEventListener("click", () => irPara("comprovante.html"));
+
+    opcoes.append(cancelar, seguir);
+  }
+
+  document.getElementById("fechar").addEventListener("click", () => irPara("confirmacao.html"));
+
+  balaoBot("", `Oi, Felipe! Sou a <strong>ia.itaú</strong> e vou te ajudar a checar se essa transferência é segura.`);
+  setTimeout(perguntar, 800);
+</script>
+</body>
+</html>

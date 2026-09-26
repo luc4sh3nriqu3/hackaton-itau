@@ -63,12 +63,12 @@
   <div class="overlay" id="overlay">
     <div class="sheet">
       <div class="sheet-topo">
-        <h2>Fique atento!</h2>
+        <h2><span class="alerta-icone"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l10 19H2L12 2z"/><path d="M12 9v5" stroke="#fff" stroke-width="1.8"/><circle cx="12" cy="17.2" r="1" fill="#fff"/></svg></span> Possível fraude</h2>
         <button class="fechar" id="fechar" aria-label="Fechar">✕</button>
       </div>
       <p id="texto-aviso"></p>
-      <button class="botao" id="continuar-assim">Continuar mesmo assim</button>
-      <button class="botao secundario" id="cancelar">Cancelar transferência</button>
+      <button class="botao secundario" id="continuar-assim">Continuar mesmo assim</button>
+      <button class="botao" id="avaliacao">Iniciar avaliação</button>
     </div>
   </div>
 
@@ -114,28 +114,19 @@
     }
   });
 
-  const SALDO_CONTA = 0;
   const overlay = document.getElementById("overlay");
 
   document.getElementById("transferir").addEventListener("click", () => {
-    const falta = dados.valor - SALDO_CONTA;
-    if (falta > 0) {
-      document.getElementById("texto-aviso").textContent =
-        `Você pode concluir esta transação utilizando R$ ${formatarMoeda(falta)} do seu Limite da Conta. ` +
-        `É importante lembrar que é um crédito para usar em imprevistos e por pouco tempo. ` +
-        `Ao cobrir o valor utilizado ainda hoje, você não terá qualquer custo.`;
-      overlay.classList.add("aberto");
-      return;
-    }
-    irPara("comprovante.html");
+    document.getElementById("texto-aviso").textContent =
+      `Identificamos sinais de uma provável transação fraudulenta neste Pix de R$ ${valorFormatado} para ${dados.nome}. ` +
+      `A chave é nova para você e o padrão da transferência foge do seu histórico. ` +
+      `Antes de concluir, faça uma avaliação rápida com a ia.itaú.`;
+    overlay.classList.add("aberto");
   });
 
   document.getElementById("fechar").addEventListener("click", () => overlay.classList.remove("aberto"));
   document.getElementById("continuar-assim").addEventListener("click", () => irPara("comprovante.html"));
-  document.getElementById("cancelar").addEventListener("click", () => {
-    limparTransferencia();
-    irPara("pix.html");
-  });
+  document.getElementById("avaliacao").addEventListener("click", () => irPara("avaliacao.html"));
 </script>
 </body>
 </html>
