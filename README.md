@@ -1,38 +1,110 @@
-# hackaton-itau
+# hackaton-itau · espera.ai
 
 Protótipo de app bancário (pasta `MVP/`) integrado a um serviço de **triagem educativa de golpes do Pix** (pasta `servico/`).
 
-Quando uma transferência Pix parece suspeita, o app abre uma conversa com a ia.itaú. São 3 perguntas de múltipla escolha, escolhidas conforme a transação, e cada uma ensina um truque usado por golpistas. Com base nas respostas, o serviço calcula uma probabilidade refinada de golpe. Se houver sinais de risco, o chat pergunta *"Você não gostaria de repensar sobre essa transação por alguns minutos?"* e explica os motivos com calma, sem números nem alarme. A transferência nunca é bloqueada: o cliente escolhe entre "Continuar para transação mesmo assim" e "Cancelar transação".
-
-Se ele continuar, na próxima vez que abrir o app aparece um pop-up perguntando se aquele Pix era golpe. A resposta (`golpe`, `nao_golpe` ou `sem_resposta`) vai para a base e ajuda a confirmar desfechos reais para o retreino.
+**Como funciona:**
+1. Quando uma transferência Pix foge do padrão do cliente, o app mostra uma **página de alerta** com os pontos de atenção. O cliente pode seguir direto ou fazer a avaliação com a **espera.ai**.
+2. A avaliação é uma conversa com **3 perguntas** de múltipla escolha. Cada uma vem com uma dica curta sobre golpes, e os balões podem ser lidos em voz alta (botão de som).
+3. Com base nas respostas, o serviço estima a chance de golpe. Se houver sinais de risco, o chat pergunta *"Você não gostaria de repensar sobre essa transação por alguns minutos?"* e mostra os motivos com calma, sem números nem alarme.
+4. A transferência **nunca é bloqueada**: o cliente escolhe entre "Continuar transferência mesmo assim" e "Cancelar transferência".
+5. Depois de qualquer **transferência realizada**, com ou sem avaliação, a próxima visita à home mostra um pop-up perguntando se aquele Pix era golpe. A resposta (`golpe`, `nao_golpe` ou `sem_resposta`) ajuda a confirmar desfechos reais para o retreino. Transferência cancelada não gera pop-up.
 
 ## Como rodar
 
-```bash
-# 1. Ambiente Python (3.12)
-python3 -m venv .venv            # se faltar o pacote python3-venv: python3 -m venv --without-pip .venv
-.venv/bin/pip install -r servico/requirements.txt   # ou: python3 -m pip --python .venv/bin/python install -r servico/requirements.txt
+Você vai subir duas coisas: a **API** (porta 8000) e o **site do app** (porta 5500). Cada uma roda num terminal separado e precisa continuar aberta enquanto você usa o app.
 
-# 2. Configuração
+**Pré-requisitos:**
+- **Python 3.10 ou mais novo** ([python.org/downloads](https://www.python.org/downloads/)). No Windows, marque **"Add python.exe to PATH"** na instalação.
+- O código do projeto: `git clone https://github.com/luc4sh3nriqu3/hackaton-itau.git`, ou baixe o ZIP pelo botão "Code" do GitHub e extraia.
+- Não precisa de chave do Gemini: sem ela, o texto final sai de um modelo local.
+
+O modelo já vem treinado em `servico/modelos/`, então não é preciso gerar dados nem treinar para ver o app.
+
+### Linux (e macOS)
+
+Abra um terminal na pasta do projeto (`hackaton-itau`):
+
+```bash
+# 1. Criar o ambiente Python e instalar as dependências (só na primeira vez; leva alguns minutos)
+python3 -m venv .venv
+.venv/bin/pip install -r servico/requirements.txt
+
+# 2. Criar o arquivo de configuração (só na primeira vez)
 cp servico/.env.example servico/.env
 
-# 3. Dataset sintético + treino (o modelo já treinado está em servico/modelos/)
+# 3. Subir a API (deixe este terminal aberto)
 cd servico
-../.venv/bin/python -m triagem.gerador_dataset --n 12000
-../.venv/bin/python -m triagem.treino
-../.venv/bin/python -m triagem.relatorio   # métricas + gráficos (seção "Métricas do modelo")
-
-# 4. API  →  http://localhost:8000/docs
-../.venv/bin/uvicorn triagem.api:app --port 8000
-
-# 5. MVP (em outro terminal)  →  http://localhost:5500/index.html
-cd MVP && python3 -m http.server 5500
-
-# Testes
-cd servico && ../.venv/bin/python -m pytest -q tests
+../.venv/bin/python -m uvicorn triagem.api:app --port 8000
 ```
 
-Roteiro do fluxo real: Pix → digite uma chave nova (por exemplo `golpista@mail.com`) → valor de R$ 1.000,00 → Transferir → página de alerta → "Iniciar avaliação" → responda as 3 perguntas → "Continuar transferência mesmo assim" → senha → comprovante → "Voltar ao início": o pop-up de feedback aparece na home. O tempo até o pop-up aparecer é `FEEDBACK_ATRASO_MINUTOS` no `servico/.env` (0 na demo). Para o roteiro da apresentação, veja [Modo demo](#modo-demo-apresentações).
+Abra **outro terminal** na pasta do projeto:
+
+```bash
+# 4. Subir o site do app (deixe este terminal aberto também)
+cd MVP
+python3 -m http.server 5500
+```
+
+No Ubuntu/Debian, se o passo 1 der erro de `ensurepip`, instale o pacote que falta com `sudo apt install python3-venv` e repita.
+
+### Windows (PowerShell ou Prompt de Comando)
+
+Abra um terminal na pasta do projeto (`hackaton-itau`). Os comandos funcionam tanto no PowerShell quanto no Prompt de Comando.
+
+**1. Criar o ambiente Python e instalar as dependências** (só na primeira vez; leva alguns minutos):
+
+```bat
+py -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r servico\requirements.txt
+```
+
+**2. Criar o arquivo de configuração** (só na primeira vez):
+
+```bat
+copy servico\.env.example servico\.env
+```
+
+**3. Subir a API** (deixe este terminal aberto):
+
+```bat
+cd servico
+..\.venv\Scripts\python.exe -m uvicorn triagem.api:app --port 8000
+```
+
+**4. Subir o site do app:** abra **outro terminal** na pasta do projeto e rode (deixe aberto também):
+
+```bat
+cd MVP
+py -m http.server 5500
+```
+
+Se o comando `py` não existir, use `python` no lugar. Os comandos chamam o Python do ambiente direto, então não é preciso "ativar" o `.venv`, o que evita o bloqueio de scripts do PowerShell.
+
+### Usar o app
+
+1. Abra **http://localhost:5500/index.html** no navegador. Funciona melhor no Chrome ou Edge, com a janela estreita ou no modo celular do DevTools (F12).
+2. Para conferir a API, abra **http://localhost:8000/saude**, que deve mostrar `"ok": true`. A documentação das rotas fica em **http://localhost:8000/docs**.
+3. Para a apresentação, ligue o [modo demo](#modo-demo-apresentações): em `servico/.env`, troque para `TRIAGEM_MODO_DEMO=1`. Não precisa reiniciar.
+
+**Roteiro do fluxo real:** Pix → digite uma chave nova (ex.: `golpista@mail.com`) → valor de R$ 1.000,00 → Transferir → página de alerta → "Iniciar avaliação" → responda as 3 perguntas → "Continuar transferência mesmo assim" → senha (qualquer 6 dígitos) → comprovante → "Voltar ao início": o pop-up de feedback aparece na home.
+
+**Se algo der errado:**
+- **O chat diz "Não consegui concluir a avaliação":** a API não está rodando. Confira o terminal do passo 3.
+- **A tela parece antiga depois de atualizar o código:** recarregue sem cache com **Ctrl+Shift+R**.
+- **"Address already in use" ou porta ocupada:** já existe outro programa usando a porta 8000 ou 5500. Feche o terminal antigo ou troque a porta (se trocar a da API, ajuste `TRIAGEM_API_URL` em `MVP/triagem.js`).
+- **Para parar:** `Ctrl+C` em cada terminal.
+
+### Para desenvolvedores
+
+A partir da pasta `servico/` (no Windows, troque `../.venv/bin/python` por `..\.venv\Scripts\python.exe`):
+
+```bash
+../.venv/bin/python -m pytest -q tests                      # testes
+../.venv/bin/python -m triagem.gerador_dataset --n 12000     # regerar o dataset sintético
+../.venv/bin/python -m triagem.treino                        # retreinar o modelo
+../.venv/bin/python -m triagem.relatorio                     # métricas + gráficos (seção "Métricas do modelo")
+../.venv/bin/python -m uvicorn triagem.api:app --port 8000 --reload   # API recarregando ao editar o código
+```
 
 ### Onde colocar a chave do Gemini
 
@@ -73,12 +145,14 @@ Vale a partir da próxima avaliação, sem reiniciar a API. Para voltar ao fluxo
 - **Fluxo Pix que já existia:** `pix.html` → `destinatario.html` → `contato.html` → `valor.html` → `conta.html` → `confirmacao.html` → `comprovante.html`. A confirmação sempre abria um alerta de "Possível fraude" levando a `avaliacao.html`, um chat com 3 perguntas fixas e um score escrito à mão.
 - **Convenções seguidas:** nomes em português, script inline em cada página usando os helpers de `app.js`, e os mesmos componentes visuais do chat (`.msg-bot`, `.msg-usuario`, `.chip`, `.sheet`).
 - **Decisão:** a integração entrou no `avaliacao.html`, que foi reescrito para consumir a API mantendo o visual de chat. O `confirmacao.html` passou a abrir o alerta só quando o score inicial mockado passa de `LIMIAR_ALERTA` (0,65).
+- **Evoluções depois disso:** o assistente virou **espera.ai**; o alerta ganhou uma página própria (`alerta.html`) com pontos de atenção; a senha passou a ser pedida só quando o cliente decide transferir; e os balões do chat podem ser lidos em voz alta (`falar` e `montarBotaoSom` em `app.js`).
 
 ## Arquitetura
 
 ```
 servico/
   dados/perguntas.json       banco de 30 perguntas didáticas (7 dimensões × 4–5 facetas), versionado
+  dados/perguntas_demo.json  as 3 perguntas fixas e os tópicos do texto final do modo demo
   dados/sintetico/*.csv      dataset gerado (treino/validacao/teste, 38 colunas)
   modelos/                   classificador.joblib + metricas.json
   triagem/
@@ -90,13 +164,18 @@ servico/
     features.py              vetorização compartilhada entre treino e produção
     treino.py / classificador.py
     gemini.py                explicação (Gemini ou template) + orientação de coação
+    demo.py                  modo demo: perguntas fixas e texto final mockado
+    relatorio.py             relatório de métricas + gráficos (atualiza o README)
     armazenamento.py         log em SQLite (insumo de retreino)
     api.py                   FastAPI
 MVP/
+  app.js                     helpers do app (estado da transferência, navegação, leitura em voz)
   triagem.js                 cliente da API + heurística mock do Bloco 1 (PLACEHOLDER)
   confirmacao.html           decide se abre o alerta
-  avaliacao.html             chat com 3 perguntas → "repensar" → continuar ou cancelar
-  home.html                  verifica se há feedback pendente ao abrir
+  alerta.html                página de alerta com pontos de atenção → avaliação ou seguir
+  avaliacao.html             chat com 3 perguntas → "repensar" → continuar (senha) ou cancelar
+  comprovante.html           transferência realizada: registra o pop-up de feedback pendente
+  home.html                  mostra o pop-up de feedback pendente ao abrir
   feedback/                  pop-up de feedback: interface separada da integração com a API
                              (contrato e como trocar a tela em MVP/feedback/README.md)
 ```
@@ -112,7 +191,7 @@ MVP/
 | `GET /v1/feedbacks/pendentes?cliente_id=…` | Transações que o cliente continuou e cujo pop-up de feedback ainda não apareceu |
 | `POST /v1/sessoes/{id}/feedback/exibido` | Marca que o pop-up apareceu (não é perguntado de novo) |
 | `POST /v1/sessoes/{id}/feedback` | Recebe `{feedback_cliente: "golpe" \| "nao_golpe" \| "sem_resposta"}` |
-| `GET /saude` | Versões e se o Gemini está configurado |
+| `GET /saude` | Versões, se o Gemini está configurado e se o modo demo está ligado |
 
 O `POST /v1/sessoes` também aceita `cliente_id` e `descricao_exibicao` (opcionais, usados pelo pop-up de feedback) e `nome_destinatario` (opcional, usado na pergunta de conferência do modo demo). No modo demo, o resultado traz `explicacao_topicos` (lista de `{tom, texto}`, com `**trechos**` a destacar); no modo real esse campo vem `null` e o texto está em `explicacao_gerada`. As perguntas chegam ao cliente sem multiplicadores nem flags internas. O MVP consome exatamente essa API pública, sem atalho interno.
 
@@ -270,7 +349,7 @@ A matriz soma 1198 e não 12.000 porque só usa o teste: avaliar com sessões qu
 - **Métricas:** veja a seção [Métricas do modelo](#métricas-do-modelo), gerada pelo script `triagem/relatorio.py`.
 - **Coação física:** a sessão é interrompida na hora e a API devolve uma orientação de segurança **fixa e revisada** (190, MED, banco), sem passar pelo Gemini. Numa situação de risco físico, esse texto não deve depender de rede nem da variação de um modelo generativo.
 - **Log para retreino:** o SQLite (`servico/triagem.db`) guarda uma linha por sessão com as colunas do esquema, mais o status, as versões de modelo e de banco, a probabilidade interna, a decisão do cliente (`decisao_cliente`) e os horários do pop-up (`feedback_exibido_em`, `feedback_respondido_em`). O `feedback_cliente` é o primeiro indício do desfecho real. Quando o desfecho for confirmado (feedback mais confirmação do banco), basta preencher `rotulo_real_golpe` e `rotulo_tipo_golpe`, e as linhas passam a servir de dado real no mesmo formato do sintético. O retreino automático fica fora do escopo desta versão.
-- **Feedback pós-transação:** só aparece para quem escolheu continuar, uma única vez por transação e depois de `FEEDBACK_ATRASO_MINUTOS`. Se o cliente fechar ou sair sem responder, fica `sem_resposta`: nada é suposto. No dataset sintético, `feedback_cliente` é simulado para todas as sessões (quem tem menos consciência de risco responde menos), só para testar o pipeline.
+- **Feedback pós-transação:** na versão atual (demo), o pop-up é disparado pelo comprovante: aparece uma única vez depois de **qualquer transferência realizada**, com ou sem avaliação, e nunca depois de um cancelamento. A pendência fica no `localStorage` do navegador. Quando a transferência passou pela avaliação, a resposta também vai para a API. Para produção, a API já tem as rotas de pendências por cliente, com `FEEDBACK_ATRASO_MINUTOS` (ver `MVP/feedback/README.md`). Se o cliente fechar sem responder, fica `sem_resposta`: nada é suposto. No dataset sintético, `feedback_cliente` é simulado para todas as sessões (quem tem menos consciência de risco responde menos), só para testar o pipeline.
 - **Tom do fim do chat:** o texto (Gemini ou template) cita os sinais que o próprio cliente contou, não mostra números nem porcentagens e termina convidando a uma pausa e a uma checagem por canal oficial. A probabilidade continua calculada e salva na base.
 
 ## Placeholders e limitações
