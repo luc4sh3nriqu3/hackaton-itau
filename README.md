@@ -82,6 +82,61 @@ MVP/
 
 As perguntas chegam ao cliente sem multiplicadores nem flags internas. O MVP consome exatamente essa API pública, sem atalho interno.
 
+## Base de dados (variáveis analisadas)
+
+Cada linha da base é **uma sessão de triagem**, com **38 colunas** em 3 blocos. O esquema está em `servico/triagem/esquema.py` e os dados em `servico/dados/sintetico/{treino,validacao,teste}.csv`. A coluna "Modelo usa?" diz se a variável entra no classificador que calcula a probabilidade de golpe.
+
+**Bloco 1: sinais da transação (18 colunas).** No mundo real vêm do modelo antifraude do banco; no MVP são simulados.
+
+| Campo | O que é | Modelo usa? |
+|---|---|---|
+| `id_transacao` | Identificador da transação | Não (só identifica) |
+| `timestamp_transacao` | Data e hora do Pix | Sim, a hora do dia |
+| `valor_transacao` | Valor do Pix, em R$ | Sim |
+| `valor_medio_historico_usuario` | Quanto o cliente costuma transferir | Sim |
+| `desvio_valor_padrao` | Quanto o valor foge da média: (valor − média) / média | Sim |
+| `destinatario_chave_pix_hash` | Chave do destinatário, anonimizada | Não (só identifica) |
+| `tipo_chave_pix` | CPF, e-mail, telefone ou aleatória | Sim |
+| `destinatario_novo` | Se é a primeira vez que o cliente paga essa pessoa | Sim |
+| `idade_chave_pix_destinatario` | Há quantos dias a chave do destinatário existe | Sim |
+| `horario_transacao_incomum` | Se o horário foge do padrão do cliente (ex.: madrugada) | Sim |
+| `dispositivo_reconhecido` | Se o Pix saiu de um celular já conhecido | Sim |
+| `velocidade_digitacao_atipica` | Digitação estranha, possível sinal de acesso remoto | Sim |
+| `numero_transacoes_conta_24h` | Quantos Pix a conta fez nas últimas 24h | Sim |
+| `canal_transacao` | App ou internet banking | Sim |
+| `motivo_alerta_modelo_base` | Texto curto com o motivo do alerta | Não (vai só para o Gemini) |
+| `fator_risco_principal` | O sinal que mais pesou no alerta (também guia a escolha das perguntas) | Sim |
+| `fator_risco_secundario` | O segundo sinal que mais pesou (pode ser vazio) | Sim |
+| `score_inicial_modelo_base` | Probabilidade de golpe dada pelo modelo antifraude, antes das perguntas | Sim |
+
+**Bloco 2: perguntas e respostas (13 colunas).** Para cada pergunta N (1 a 3):
+
+| Campo | O que é | Modelo usa? |
+|---|---|---|
+| `pergunta_N_id` | Qual das 30 perguntas do banco foi feita | Sim, junto com a resposta |
+| `pergunta_N_dimensao` | Dimensão de risco da pergunta (P1 canal … P7 verificação) | Sim, contagem por dimensão |
+| `pergunta_N_resposta` | Alternativa escolhida (a, b, c…) | Sim, junto com a pergunta |
+| `pergunta_N_multiplicador` | Peso de risco da alternativa, usado só para gerar o gabarito sintético | **Não** (o modelo aprende os próprios pesos) |
+| `sinalizador_coacao_fisica` | Se alguma resposta indicou ameaça física em andamento | Não (interrompe o fluxo e mostra a orientação de segurança) |
+
+**Bloco 3: veredito e resultado (7 colunas).**
+
+| Campo | O que é | Modelo usa? |
+|---|---|---|
+| `veredito_usuario` | O que o cliente acha: golpe, não é golpe ou não tem certeza | **Não** (para o modelo não só copiar o palpite; fica no log para comparar humano × modelo) |
+| `pontuacao_reconhecimento_padroes` | Quantas das 3 respostas mostram que o cliente reconhece o risco (0 a 3) | Sim |
+| `score_refinado` | Probabilidade final calculada pelo modelo (saída) | Não (é o resultado) |
+| `rotulo_real_golpe` | Gabarito: era golpe ou não | Não (é o que o modelo tenta acertar) |
+| `rotulo_tipo_golpe` | Tipo de golpe (falsa central, WhatsApp clonado, venda falsa…) | Não |
+| `explicacao_gerada` | Texto final mostrado ao cliente | Não (só log) |
+| `usuario_seguiu_recomendacao` | Se o cliente seguiu a recomendação | Não (feedback de produto) |
+
+**Como essas colunas viram entradas do modelo:** das 38 colunas, o classificador usa 25 (15 do Bloco 1, 9 das perguntas e respostas e a pontuação de reconhecimento), transformadas em 173 variáveis numéricas (`servico/triagem/features.py`):
+- Os números passam por logaritmo, porque valores e idades de chave variam muito, e a hora vira uma posição num ciclo de 24h.
+- As categorias (tipo de chave, canal, fatores de risco) viram colunas 0/1, uma por opção.
+- As respostas viram 131 colunas 0/1, uma para cada combinação pergunta + alternativa do banco. Como a pergunta da posição 1 muda de sessão para sessão, o modelo olha "qual pergunta, qual resposta", e não "o que respondeu na posição 1".
+- Mais 7 colunas com quantas perguntas foram feitas em cada dimensão.
+
 ## Métricas do modelo
 
 Para regenerar esta seção, os gráficos e o relatório completo (`servico/relatorios/`):
@@ -132,7 +187,7 @@ As sessões foram divididas em 80% treino, 10% validação e 10% teste. O modelo
 | **Modelo alertou** | VP = 339 | FP = 265 |
 | **Modelo não alertou** | FN = 52 | VN = 542 |
 
-Todas as outras métricas saem dessas quatro contagens (por exemplo, recall = VP / (VP + FN)). A exceção são AUC, Brier e calibração, que usam a probabilidade diretamente.
+A matriz soma 1198 e não 12.000 porque só usa o teste: avaliar com sessões que o modelo já viu no treino daria números otimistas demais. Todas as outras métricas saem dessas quatro contagens (por exemplo, recall = VP / (VP + FN)). A exceção são AUC, Brier e calibração, que usam a probabilidade diretamente.
 
 > **Limitação:** como o gabarito vem de uma fórmula escrita por nós, as métricas medem o quanto o modelo reaprende essa fórmula a partir das respostas, **não** o quanto ele acertaria com golpes reais. Para isso é preciso comparar com desfechos reais confirmados; o log da API em SQLite já guarda as sessões no mesmo formato para quando esses dados existirem.
 
