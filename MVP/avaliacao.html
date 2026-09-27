@@ -18,7 +18,10 @@
       <svg width="20" height="20" viewBox="0 0 24 24" fill="#ec7000"><path d="M12 2l2.2 6.3L20.5 10l-6.3 2.2L12 18.5l-2.2-6.3L3.5 10l6.3-1.7L12 2z"/></svg>
       <span>espera<strong>.ai</strong></span>
     </span>
-    <button class="fechar" id="fechar" aria-label="Fechar">✕</button>
+    <span class="chat-acoes">
+      <button class="som" id="som" type="button"></button>
+      <button class="fechar" id="fechar" aria-label="Fechar">✕</button>
+    </span>
   </div>
 
   <div class="conteudo chat" id="chat"></div>
@@ -27,12 +30,6 @@
     <div class="chat-opcoes" id="opcoes"></div>
 
     <div class="chat-rodape">
-      <div class="chat-campo">
-        <input placeholder="Digite aqui" disabled />
-        <span class="enviar">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ec7000" stroke-width="1.8"><path d="M4 12l16-8-6 8 6 8-16-8z"/></svg>
-        </span>
-      </div>
       <p class="chat-aviso">Resposta gerada por IA e pode ter informações imprecisas.</p>
     </div>
   </div>
@@ -80,6 +77,7 @@
       ${html}`;
     chat.appendChild(bloco);
     rolar();
+    falar(bloco.textContent.trim());
   }
 
   function balaoUsuario(texto) {
@@ -217,6 +215,11 @@
     });
     opcoes.append(ligar, cancelar);
   }
+
+  montarBotaoSom(document.getElementById("som"), () => {
+    const ultimo = chat.querySelector(".msg-bot:last-of-type");
+    if (ultimo) falar(ultimo.textContent.trim());
+  });
 
   document.getElementById("fechar").addEventListener("click", () => irPara("alerta.html"));
 

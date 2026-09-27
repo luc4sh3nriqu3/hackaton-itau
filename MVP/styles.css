@@ -425,6 +425,7 @@ h1 {
 }
 .ia-marca { display: flex; align-items: center; gap: 6px; font-size: 17px; color: var(--laranja); }
 .ia-marca strong { color: var(--laranja); font-weight: 700; }
+.chat-acoes { display: flex; align-items: center; gap: 8px; }
 .chat-topo .fechar {
   border: none; background: var(--cinza-fundo); border-radius: 50%; width: 32px; height: 32px;
   font-size: 15px; cursor: pointer; color: #333;
@@ -462,24 +463,27 @@ h1 {
 .chip:active { background: #fff3e7; }
 .chip.destaque { background: var(--laranja); color: #fff; }
 
-/* base do chat: opções + campo, com degradê laranja → branco subindo do rodapé */
+/* base do chat: opções e aviso, com degradê laranja → branco subindo do rodapé */
 .chat-base {
   flex: 0 0 auto; display: flex; flex-direction: column;
   padding-top: 18px;
   background: linear-gradient(to top, #ffc79a 0%, #ffe6d2 38%, rgba(255, 255, 255, 0) 100%);
 }
 .chat-rodape { flex: 0 0 auto; padding: 4px 22px 10px; }
-.chat-campo {
-  display: flex; align-items: center; gap: 10px; background: #fff;
-  border: 1px solid var(--cinza-claro); border-radius: 24px; padding: 10px 16px;
-}
-.chat-campo input { flex: 1 1 auto; border: none; outline: none; font-family: inherit; font-size: 15px; background: none; }
 .chat-aviso { font-size: 11px; color: var(--cinza); text-align: center; margin: 8px 0 0; }
+
+/* botão de som (alerta e avaliação) */
+.som {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; border-radius: 50%; border: none; cursor: pointer;
+  background: var(--cinza-fundo); color: #555; padding: 0;
+}
+.som.ativo { background: var(--laranja); color: #fff; }
 
 /* ---------- página de alerta (alerta.html) ---------- */
 .conteudo.alerta { padding: 4px 24px 20px; }
 .conteudo.alerta .botao { padding: 16px 24px; }
-.alerta-topo { display: flex; justify-content: flex-end; padding: 4px 0 6px; }
+.alerta-topo { display: flex; align-items: center; justify-content: space-between; padding: 4px 0 6px; }
 .alerta-topo .fechar {
   border: none; background: none; font-size: 22px; line-height: 1; cursor: pointer; color: var(--texto); padding: 4px;
 }

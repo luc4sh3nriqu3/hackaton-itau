@@ -15,6 +15,7 @@
 
   <div class="conteudo alerta">
     <div class="alerta-topo">
+      <button class="som" id="som" type="button"></button>
       <button class="fechar" id="fechar" aria-label="Fechar">✕</button>
     </div>
 
@@ -83,6 +84,16 @@
       `<span>${texto}</span>`;
     lista.appendChild(item);
   });
+
+  montarBotaoSom(document.getElementById("som"), () =>
+    falar(
+      document.querySelector("h1").textContent +
+        ". " +
+        document.getElementById("subtitulo").textContent +
+        " Atente-se: " +
+        dicas.slice(0, 3).join(" ")
+    )
+  );
 
   document.getElementById("fechar").addEventListener("click", () => irPara("confirmacao.html"));
   document.getElementById("avaliacao").addEventListener("click", () => irPara("avaliacao.html"));
