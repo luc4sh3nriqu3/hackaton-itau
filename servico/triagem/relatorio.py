@@ -9,7 +9,7 @@ Avalia o modelo salvo em modelos/ no conjunto de TESTE (dados que ele nunca viu)
 - README.md (raiz)            atualiza a seção entre <!-- METRICAS:INICIO --> e <!-- METRICAS:FIM -->
 
 As métricas usam a probabilidade calibrada sem teto/piso, que é a mesma usada nas
-decisões da API; o teto/piso (15%–98%) vale só para o número exibido ao usuário.
+decisões da API; o teto/piso (15%–98%) vale só para o `score_refinado` devolvido pela API.
 Sessões com coação física ficam fora, como no treino (não passam pelo score).
 """
 import json
@@ -289,7 +289,7 @@ def tabela_matriz(c) -> str:
 
 
 def tabela_niveis(m) -> str:
-    out = ["| Nível de risco mostrado | Sessões | Quantas eram golpe de verdade |", "|---|---|---|"]
+    out = ["| Nível de risco | Sessões | Quantas eram golpe de verdade |", "|---|---|---|"]
     for nivel, d in m["por_nivel_de_risco"].items():
         out.append(f"| {nivel} | {d['sessoes']} | {_pct(d['golpe_real']) if d['golpe_real'] is not None else '—'} |")
     return "\n".join(out)
@@ -310,10 +310,10 @@ def explicacao(m) -> str:
 - **Acurácia balanceada ({_pct(c['acuracia_balanceada'])})**: média entre recall e especificidade. Diferente da acurácia comum, não é inflada pela classe majoritária.
 - **AUC-ROC ({_num(m['auc_roc'])})**: não depende de limiar. É a chance de um golpe sorteado receber um score maior que uma transação legítima sorteada. 0,5 é chute; 1,0 é perfeito. O score inicial sozinho dá {_num(m['score_base_sozinho']['auc_roc'])}: **as 3 perguntas melhoram a separação**.
 - **AUC-PR ({_num(m['auc_pr'])})**: resume a curva precisão × recall. A referência de um chute é a proporção de golpes ({_num(m['prevalencia_golpe'])}); quanto mais acima, melhor.
-- **Brier score ({_num(m['brier'])})**: erro médio da probabilidade (0 é perfeito). Um modelo que sempre dissesse "{_pct(m['prevalencia_golpe'])} de chance" teria {_num(m['brier_referencia_chute'])}. Importa porque o app mostra a probabilidade ao cliente.
-- **Calibração**: se o modelo diz 70%, cerca de 70% desses casos deveriam ser golpe. No gráfico, quanto mais perto da diagonal, mais confiável é o número exibido.
+- **Brier score ({_num(m['brier'])})**: erro médio da probabilidade (0 é perfeito). Um modelo que sempre dissesse "{_pct(m['prevalencia_golpe'])} de chance" teria {_num(m['brier_referencia_chute'])}. Importa porque a probabilidade é guardada na base e devolvida pela API (`score_refinado`); o MVP não a mostra ao cliente, mas outro sistema pode usá-la.
+- **Calibração**: se o modelo diz 70%, cerca de 70% desses casos deveriam ser golpe. No gráfico, quanto mais perto da diagonal, mais confiável é a probabilidade devolvida pela API.
 
-**Por que o limiar é {_pct(c['limiar'])} e não 50%?** O limiar é a probabilidade a partir da qual a transação vira alerta. Ele foi escolhido no conjunto de validação como o maior que ainda detecta pelo menos 90% dos golpes; no teste, com dados que o modelo nunca viu, o recall ficou em {_pct(c['recall'])}, uma variação normal entre amostras. Abaixá-lo aumenta o recall e derruba a precisão; subi-lo faz o contrário (veja o gráfico do limiar e a coluna "Limiar 50%" da tabela). Como a transferência nunca é bloqueada, só avisada, um falso alarme custa pouco e um golpe não detectado custa muito, então o limiar favorece o recall."""
+**Por que o limiar é {_pct(c['limiar'])} e não 50%?** O limiar é a probabilidade a partir da qual a transação vira alerta: acima dele, o chat mostra a mensagem "Você não gostaria de repensar sobre essa transação por alguns minutos?"; abaixo, "Não encontramos sinais fortes de golpe". Ele foi escolhido no conjunto de validação como o maior que ainda detecta pelo menos 90% dos golpes; no teste, com dados que o modelo nunca viu, o recall ficou em {_pct(c['recall'])}, uma variação normal entre amostras. Abaixá-lo aumenta o recall e derruba a precisão; subi-lo faz o contrário (veja o gráfico do limiar e a coluna "Limiar 50%" da tabela). Como a transferência nunca é bloqueada, só há um convite a repensar, um falso alarme custa pouco e um golpe não detectado custa muito, então o limiar favorece o recall."""
 
 
 def origem_dos_dados(m) -> str:
@@ -414,9 +414,9 @@ As métricas usam a probabilidade calibrada sem teto/piso, que é a usada nas de
 
 ![Distribuição dos scores](figuras/distribuicao_scores.png)
 
-## Níveis de risco mostrados ao cliente
+## Níveis de risco (uso interno)
 
-O app mostra baixo (abaixo do limiar), moderado (entre o limiar e 50%) ou alto (50% ou mais). A tabela mostra quantos eram golpe de verdade em cada nível:
+A API classifica cada sessão como baixo (abaixo do limiar), moderado (entre o limiar e 50%) ou alto (50% ou mais). O cliente não vê o nível nem o número: moderado e alto recebem a mensagem de "repensar"; baixo recebe "Não encontramos sinais fortes de golpe". A tabela mostra quantos eram golpe de verdade em cada nível:
 
 {tabela_niveis(m)}
 """
