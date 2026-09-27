@@ -182,12 +182,12 @@
     mostrarOpcoes(
       [
         {
-          texto: "Cancelar transação",
+          texto: "Cancelar transferência",
           destaque: arriscado,
-          acao: () => decidir("cancelar", () => { limparTransferencia(); irPara("pix.html"); }),
+          acao: () => decidir("cancelar", () => { limparTransferencia(); irPara("home.html"); }),
         },
         {
-          texto: arriscado ? "Continuar para transação mesmo assim" : "Continuar para transação",
+          texto: arriscado ? "Continuar transferência mesmo assim" : "Continuar transferência",
           destaque: !arriscado,
           acao: () => decidir("continuar", () => irPara("senha.html")),
         },
