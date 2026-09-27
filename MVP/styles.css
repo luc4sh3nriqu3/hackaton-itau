@@ -418,7 +418,7 @@ h1 {
   background: #fff;
 }
 
-/* ---------- chatbot ia.itaú ---------- */
+/* ---------- chatbot espera.ai ---------- */
 .chat-topo {
   display: flex; align-items: center; justify-content: space-between;
   padding: 10px 22px 6px; flex: 0 0 auto;
@@ -462,18 +462,47 @@ h1 {
 .chip:active { background: #fff3e7; }
 .chip.destaque { background: var(--laranja); color: #fff; }
 
+/* base do chat: opções + campo, com degradê laranja → branco subindo do rodapé */
+.chat-base {
+  flex: 0 0 auto; display: flex; flex-direction: column;
+  padding-top: 18px;
+  background: linear-gradient(to top, #ffc79a 0%, #ffe6d2 38%, rgba(255, 255, 255, 0) 100%);
+}
 .chat-rodape { flex: 0 0 auto; padding: 4px 22px 10px; }
 .chat-campo {
-  display: flex; align-items: center; gap: 10px;
+  display: flex; align-items: center; gap: 10px; background: #fff;
   border: 1px solid var(--cinza-claro); border-radius: 24px; padding: 10px 16px;
 }
 .chat-campo input { flex: 1 1 auto; border: none; outline: none; font-family: inherit; font-size: 15px; background: none; }
 .chat-aviso { font-size: 11px; color: var(--cinza); text-align: center; margin: 8px 0 0; }
 
-.alerta-icone { color: #d62222; display: inline-flex; vertical-align: -4px; margin-right: 6px; }
+/* ---------- página de alerta (alerta.html) ---------- */
+.conteudo.alerta { padding: 4px 24px 20px; }
+.conteudo.alerta .botao { padding: 16px 24px; }
+.alerta-topo { display: flex; justify-content: flex-end; padding: 4px 0 6px; }
+.alerta-topo .fechar {
+  border: none; background: none; font-size: 22px; line-height: 1; cursor: pointer; color: var(--texto); padding: 4px;
+}
+.info-icone {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 48px; height: 48px; border-radius: 50%; background: var(--cinza-fundo); color: #7a7a7a;
+  margin-bottom: 14px;
+}
+.conteudo.alerta h1 { font-size: 24px; margin-bottom: 10px; }
+.alerta-sub { font-size: 15px; line-height: 1.5; color: #444; margin: 0 0 18px; }
+.atente { background: var(--cinza-fundo); border-radius: 14px; padding: 14px; }
+.atente strong { display: block; font-size: 14px; margin-bottom: 10px; }
+.atente ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.atente li {
+  display: flex; align-items: flex-start; gap: 10px;
+  background: #fff; border-radius: 10px; padding: 10px 12px; font-size: 14px; line-height: 1.45; color: #444;
+}
+.atente li svg { flex: 0 0 auto; color: #8a8a8a; margin-top: 2px; }
+.alerta-nota { font-size: 13px; line-height: 1.5; color: var(--cinza); margin: 14px 0 16px; }
+.ia-marca-inline { display: inline-flex; align-items: center; gap: 3px; color: var(--laranja); font-weight: 600; vertical-align: -1px; }
 
 /* ---------- triagem (avaliação com a API) ---------- */
-.chat-opcoes { max-height: 48%; overflow-y: auto; }
+.chat-opcoes { max-height: 360px; overflow-y: auto; }
 .chip:disabled { opacity: .5; cursor: default; }
 .msg-bot .progresso { display: block; font-size: 12px; font-weight: 600; color: var(--laranja); letter-spacing: .02em; margin-bottom: 4px; }
 .msg-bot .didatica {

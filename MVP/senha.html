@@ -55,10 +55,10 @@
     if (tecla === "apagar") senha = senha.slice(0, -1);
     else if (senha.length < 6) senha += tecla;
     atualizar();
-    if (senha.length === 6) setTimeout(() => irPara("confirmacao.html"), 250);
+    if (senha.length === 6) setTimeout(() => irPara("comprovante.html"), 250);
   });
 
-  continuar.addEventListener("click", () => irPara("confirmacao.html"));
+  continuar.addEventListener("click", () => irPara("comprovante.html"));
   atualizar();
 </script>
 </body>

@@ -155,7 +155,7 @@ cd servico && ../.venv/bin/python -m triagem.relatorio
 <!-- METRICAS:INICIO -->
 <!-- Seção gerada por `python -m triagem.relatorio` (a partir de servico/). Não edite à mão. -->
 
-Avaliado em **1198 sessões de teste** que o modelo nunca viu (391 golpes, 32,6%), com **3 perguntas por sessão**. Modelo: `regressao_logistica`, versão `20260927115952`. O relatório completo está em [`servico/relatorios/metricas.md`](servico/relatorios/metricas.md).
+Avaliado em **1198 sessões de teste** que o modelo nunca viu (391 golpes, 32,6%), com **3 perguntas por sessão**. Modelo: `regressao_logistica`, versão `20260927122658`. O relatório completo está em [`servico/relatorios/metricas.md`](servico/relatorios/metricas.md).
 
 **Resumo:** de cada 100 golpes, o modelo alerta ~87; de cada 10 alertas, ~6 são golpe de verdade. As 3 perguntas levam a AUC de 0,80 (só o score inicial) para 0,86.
 

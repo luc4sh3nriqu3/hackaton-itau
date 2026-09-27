@@ -1,6 +1,6 @@
 # Relatório de métricas do classificador
 
-Gerado por `python -m triagem.relatorio`. Modelo `regressao_logistica`, versão `20260927115952`, **3 perguntas por sessão**.
+Gerado por `python -m triagem.relatorio`. Modelo `regressao_logistica`, versão `20260927122658`, **3 perguntas por sessão**.
 Conjunto de teste: 1198 sessões (391 golpes, 32,6%), sem as sessões de coação física.
 As métricas usam a probabilidade calibrada sem teto/piso, que é a usada nas decisões da API.
 

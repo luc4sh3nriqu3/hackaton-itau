@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Pix · Vamos conferir essa transferência?</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div class="phone">
+  <div class="status">
+    <span data-relogio>20:05</span>
+    <span class="direita">5G <span class="bateria">57</span></span>
+  </div>
+
+  <div class="conteudo alerta">
+    <div class="alerta-topo">
+      <button class="fechar" id="fechar" aria-label="Fechar">✕</button>
+    </div>
+
+    <span class="info-icone">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <circle cx="12" cy="12" r="9"/>
+        <path d="M12 11v5" stroke-linecap="round"/>
+        <circle cx="12" cy="8" r="1" fill="currentColor" stroke="none"/>
+      </svg>
+    </span>
+
+    <h1>Vamos conferir essa transferência?</h1>
+    <p class="alerta-sub" id="subtitulo"></p>
+
+    <div class="atente">
+      <strong>Atente-se:</strong>
+      <ul id="pontos-atencao"></ul>
+    </div>
+
+    <p class="alerta-nota">
+      Se quiser, a <span class="ia-marca-inline"><svg width="14" height="14" viewBox="0 0 24 24" fill="#ec7000"><path d="M12 2l2.2 6.3L20.5 10l-6.3 2.2L12 18.5l-2.2-6.3L3.5 10l6.3-1.7L12 2z"/></svg> espera.ai</span>
+      faz uma avaliação rápida com você, em 3 perguntas. Você decide o que fazer depois.
+    </p>
+
+    <div class="espaco"></div>
+
+    <button class="botao" id="avaliacao">Fazer avaliação</button>
+    <button class="botao secundario" id="continuar-assim" style="margin-top:12px">Transferir mesmo assim</button>
+  </div>
+
+  <div class="barra-nav"><span class="traço"></span></div>
+</div>
+
+<script src="app.js"></script>
+<script src="triagem.js"></script>
+<script>
+  const dados = lerTransferencia();
+  if (!dados.nome || !dados.valor) irPara("destinatario.html");
+
+  const bloco1 = dados.bloco1 || montarBloco1(dados);
+  const primeiroNome = (dados.nome || "o destinatário").split(" ")[0];
+
+  document.getElementById("subtitulo").textContent =
+    `Esse Pix de R$ ${formatarMoeda(dados.valor)} para ${primeiroNome} está um pouco diferente do que você costuma fazer. ` +
+    `Pode estar tudo certo, mas vale conferir antes de concluir.`;
+
+  // Dicas ligadas aos fatores apontados pelo modelo de origem (bloco1), com um lembrete geral no fim.
+  const DICAS = {
+    valor_atipico: "O valor está acima do que você costuma transferir. Confira se os dígitos estão certos.",
+    destinatario_novo_ou_desconhecido: "É a primeira vez que você envia para essa chave. Confirme com a pessoa por outro canal.",
+    dispositivo_nao_reconhecido: "Esse aparelho ainda não é conhecido. Se alguém pediu para instalar algo, desconfie.",
+    velocidade_digitacao_atipica: "A digitação saiu do seu padrão. Se alguém estiver orientando você, pause um instante.",
+    horario_incomum: "O horário é diferente do habitual. Sem pressa: um Pix pode esperar alguns minutos.",
+    chave_pix_recente: "A chave do destinatário foi criada há pouco tempo. Confirme se ela pertence a quem você espera.",
+    volume_transacoes_24h_alto: "Você fez várias transferências hoje. Revise se todas eram esperadas.",
+  };
+  const fatores = [bloco1.fator_risco_principal, bloco1.fator_risco_secundario].filter(Boolean);
+  const dicas = fatores.map((f) => DICAS[f]).filter(Boolean);
+  dicas.push("Se alguém pediu o dinheiro, confirme ligando para a pessoa.");
+
+  const lista = document.getElementById("pontos-atencao");
+  dicas.slice(0, 3).forEach((texto) => {
+    const item = document.createElement("li");
+    item.innerHTML =
+      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 11v5" stroke-linecap="round"/><circle cx="12" cy="8" r="1" fill="currentColor" stroke="none"/></svg>' +
+      `<span>${texto}</span>`;
+    lista.appendChild(item);
+  });
+
+  document.getElementById("fechar").addEventListener("click", () => irPara("confirmacao.html"));
+  document.getElementById("avaliacao").addEventListener("click", () => irPara("avaliacao.html"));
+  document.getElementById("continuar-assim").addEventListener("click", () => irPara("senha.html"));
+</script>
+</body>
+</html>

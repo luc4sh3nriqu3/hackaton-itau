@@ -1,6 +1,6 @@
 # Pop-up de feedback pós-transação
 
-Quando o cliente passa pela avaliação da ia.itaú e decide **continuar** com o Pix, na próxima vez que ele abrir o app aparece um pop-up perguntando se aquela transação era golpe. A resposta vai para a base (coluna `feedback_cliente`) e serve para confirmar desfechos reais no retreino do modelo.
+Quando o cliente passa pela avaliação da espera.ai e decide **continuar** com o Pix, na próxima vez que ele abrir o app aparece um pop-up perguntando se aquela transação era golpe. A resposta vai para a base (coluna `feedback_cliente`) e serve para confirmar desfechos reais no retreino do modelo.
 
 Esta pasta separa a **interface** da **integração com a API**. Para mudar o visual ou criar uma tela nova, basta mexer nos dois primeiros arquivos.
 

@@ -1,6 +1,6 @@
 {
   "modelo": "regressao_logistica",
-  "versao_modelo": "20260927115952",
+  "versao_modelo": "20260927122658",
   "perguntas_por_sessao": 3,
   "sessoes_teste": 1198,
   "golpes_teste": 391,

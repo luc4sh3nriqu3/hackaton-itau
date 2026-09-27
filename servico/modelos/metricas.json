@@ -1,5 +1,5 @@
 {
-  "versao_modelo": "20260927115952",
+  "versao_modelo": "20260927122658",
   "versao_banco_perguntas": "1.0.0",
   "modelo_escolhido": "regressao_logistica",
   "comparacao_modelos": {
@@ -9,9 +9,9 @@
       "brier_teste_bruto": 0.1362
     },
     "lightgbm": {
-      "auc_validacao": 0.8662,
-      "auc_teste": 0.8506,
-      "brier_teste_bruto": 0.1376
+      "auc_validacao": 0.8669,
+      "auc_teste": 0.8496,
+      "brier_teste_bruto": 0.1379
     }
   },
   "limiar_decisao": 0.1662,

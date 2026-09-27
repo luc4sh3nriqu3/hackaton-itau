@@ -60,18 +60,6 @@
     </div>
   </div>
 
-  <div class="overlay" id="overlay">
-    <div class="sheet">
-      <div class="sheet-topo">
-        <h2><span class="alerta-icone"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l10 19H2L12 2z"/><path d="M12 9v5" stroke="#fff" stroke-width="1.8"/><circle cx="12" cy="17.2" r="1" fill="#fff"/></svg></span> Possível fraude</h2>
-        <button class="fechar" id="fechar" aria-label="Fechar">✕</button>
-      </div>
-      <p id="texto-aviso"></p>
-      <button class="botao secundario" id="continuar-assim">Continuar mesmo assim</button>
-      <button class="botao" id="avaliacao">Iniciar avaliação</button>
-    </div>
-  </div>
-
   <div class="barra-nav"><span class="traço"></span></div>
 </div>
 
@@ -115,26 +103,18 @@
     }
   });
 
-  const overlay = document.getElementById("overlay");
-
+  // A senha só é pedida quando o cliente decide de fato transferir (senha.html → comprovante.html).
+  // Se o score inicial passa do limiar e a transferência ainda não foi avaliada, abre primeiro a página de alerta.
   document.getElementById("transferir").addEventListener("click", () => {
     const avaliada = dados.triagem && dados.triagem.valor === dados.valor && dados.triagem.chavePix === dados.chavePix;
     const bloco1 = montarBloco1(dados);
     if (avaliada || bloco1.score_inicial_modelo_base < LIMIAR_ALERTA) {
-      irPara("comprovante.html");
+      irPara("senha.html");
       return;
     }
     salvarTransferencia({ bloco1 });
-    document.getElementById("texto-aviso").textContent =
-      `Identificamos sinais de uma provável transação fraudulenta neste Pix de R$ ${valorFormatado} para ${dados.nome} ` +
-      `(${bloco1.motivo_alerta_modelo_base}). ` +
-      `Antes de concluir, faça uma avaliação rápida com a ia.itaú.`;
-    overlay.classList.add("aberto");
+    irPara("alerta.html");
   });
-
-  document.getElementById("fechar").addEventListener("click", () => overlay.classList.remove("aberto"));
-  document.getElementById("continuar-assim").addEventListener("click", () => irPara("comprovante.html"));
-  document.getElementById("avaliacao").addEventListener("click", () => irPara("avaliacao.html"));
 </script>
 </body>
 </html>
