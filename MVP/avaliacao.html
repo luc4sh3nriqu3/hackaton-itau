@@ -39,57 +39,46 @@
 </div>
 
 <script src="app.js"></script>
+<script src="triagem.js"></script>
 <script>
   const dados = lerTransferencia();
   const nome = dados.nome || "esse destinatário";
   const valor = dados.valor ? "R$ " + formatarMoeda(dados.valor) : "esse valor";
+  const bloco1 = dados.bloco1 || (dados.valor ? montarBloco1(dados) : null);
 
-  const roteiro = [
-    {
-      titulo: "Vamos avaliar essa transferência juntos",
-      texto:
-        `Identifiquei um padrão incomum no Pix de ${valor} para ${nome}. ` +
-        `Pra começar: você conhece pessoalmente quem vai receber?`,
-      opcoes: ["Sim, conheço", "Conheço só pela internet", "Não conheço"],
-    },
-    {
-      titulo: "Entendi. Agora sobre o motivo",
-      texto: "Como surgiu esse pedido de pagamento?",
-      opcoes: [
-        "Eu mesmo procurei o vendedor",
-        "Recebi mensagem no WhatsApp",
-        "Me ligaram dizendo ser do banco",
-        "Vi um anúncio em rede social",
-      ],
-    },
-    {
-      titulo: "Última pergunta",
-      texto: "Alguém está te pressionando para concluir agora ou pediu sigilo sobre esse Pix?",
-      opcoes: ["Não, estou tranquilo", "Sim, estão com pressa", "Pediram para não contar a ninguém"],
-    },
+  const VEREDITOS = [
+    { id: "golpe", texto: "Acho que é golpe" },
+    { id: "nao_e_golpe", texto: "Acho que não é golpe" },
+    { id: "nao_tenho_certeza", texto: "Não tenho certeza" },
   ];
+  const TITULO_NIVEL = { alto: "Risco alto de golpe", moderado: "Risco moderado de golpe", baixo: "Risco baixo" };
 
   const chat = document.getElementById("chat");
   const opcoes = document.getElementById("opcoes");
-  let passo = 0;
-  let risco = 0;
+  let sessaoId = null;
 
   function horario() {
     const agora = new Date();
     return `${String(agora.getHours()).padStart(2, "0")}:${String(agora.getMinutes()).padStart(2, "0")}`;
   }
 
+  function esc(texto) {
+    const div = document.createElement("div");
+    div.textContent = texto;
+    return div.innerHTML;
+  }
+
   function rolar() {
     requestAnimationFrame(() => (chat.scrollTop = chat.scrollHeight));
   }
 
-  function balaoBot(titulo, texto) {
+  function balaoBot(titulo, html, classe = "") {
     const bloco = document.createElement("div");
-    bloco.className = "msg-bot";
+    bloco.className = "msg-bot " + classe;
     bloco.innerHTML = `
       <span class="faisca"><svg width="18" height="18" viewBox="0 0 24 24" fill="#ec7000"><path d="M12 2l2.2 6.3L20.5 10l-6.3 2.2L12 18.5l-2.2-6.3L3.5 10l6.3-1.7L12 2z"/></svg></span>
       ${titulo ? `<strong>${titulo}</strong>` : ""}
-      <p>${texto}</p>`;
+      ${html}`;
     chat.appendChild(bloco);
     rolar();
   }
@@ -97,7 +86,7 @@
   function balaoUsuario(texto) {
     const bloco = document.createElement("div");
     bloco.className = "msg-usuario";
-    bloco.innerHTML = `<div class="bolha">${texto}</div><span class="hora">${horario()} <span class="checks">✓✓</span></span>`;
+    bloco.innerHTML = `<div class="bolha">${esc(texto)}</div><span class="hora">${horario()} <span class="checks">✓✓</span></span>`;
     chat.appendChild(bloco);
     rolar();
   }
@@ -111,83 +100,147 @@
     return bloco;
   }
 
-  function mostrarOpcoes(lista) {
+  // Mostra "digitando" enquanto a chamada à API roda (com um tempo mínimo, pro ritmo do chat).
+  async function comDigitando(promessa, minimo = 700) {
     opcoes.innerHTML = "";
-    lista.forEach((texto, i) => {
+    const espera = digitando();
+    try {
+      const [resultado] = await Promise.all([promessa, new Promise((r) => setTimeout(r, minimo))]);
+      return resultado;
+    } finally {
+      espera.remove();
+    }
+  }
+
+  function mostrarOpcoes(lista, aoEscolher) {
+    opcoes.innerHTML = "";
+    lista.forEach((item) => {
       const botao = document.createElement("button");
-      botao.className = "chip";
-      botao.textContent = texto;
-      botao.addEventListener("click", () => responder(texto, i));
+      botao.className = "chip" + (item.destaque ? " destaque" : "");
+      botao.textContent = item.texto;
+      botao.addEventListener("click", () => {
+        opcoes.querySelectorAll("button").forEach((b) => (b.disabled = true));
+        aoEscolher(item);
+      });
       opcoes.appendChild(botao);
     });
   }
 
-  function perguntar() {
-    const atual = roteiro[passo];
-    opcoes.innerHTML = "";
-    const espera = digitando();
-    setTimeout(() => {
-      espera.remove();
-      balaoBot(atual.titulo, atual.texto);
-      mostrarOpcoes(atual.opcoes);
-    }, 900);
+  function falha(erro, tentarDeNovo) {
+    console.error(erro);
+    balaoBot(
+      "Não consegui concluir a avaliação",
+      "<p>O serviço de avaliação não respondeu agora. Você pode tentar de novo ou voltar e revisar a transferência com calma.</p>"
+    );
+    mostrarOpcoes(
+      [{ texto: "Tentar de novo", destaque: true, acao: tentarDeNovo }, { texto: "Voltar", acao: () => irPara("confirmacao.html") }],
+      (item) => item.acao()
+    );
   }
 
-  function responder(texto, indice) {
-    balaoUsuario(texto);
-    opcoes.innerHTML = "";
-    if (indice > 0) risco += indice;
-    passo += 1;
-    if (passo < roteiro.length) {
-      setTimeout(perguntar, 500);
-      return;
+  function mostrarPergunta(etapa) {
+    const q = etapa.pergunta;
+    balaoBot(
+      "",
+      `<span class="progresso">Pergunta ${etapa.progresso.atual} de ${etapa.progresso.total}</span>
+       <p class="didatica">${esc(q.texto_didatico)}</p>
+       <p class="pergunta">${esc(q.pergunta)}</p>`
+    );
+    mostrarOpcoes(q.alternativas, (alt) => responder(q, alt));
+  }
+
+  async function iniciar() {
+    if (!bloco1) return irPara("destinatario.html");
+    try {
+      const etapa = await comDigitando(iniciarSessao(bloco1));
+      sessaoId = etapa.sessao_id;
+      salvarTransferencia({ sessaoTriagem: sessaoId });
+      mostrarPergunta(etapa);
+    } catch (erro) {
+      falha(erro, iniciar);
     }
-    setTimeout(concluir, 700);
   }
 
-  function concluir() {
-    const espera = digitando();
-    setTimeout(() => {
-      espera.remove();
-      if (risco >= 2) {
-        balaoBot(
-          "Risco alto de golpe",
-          `As respostas indicam sinais clássicos de fraude: contato que você não conhece, pedido vindo de fora e pressão pra pagar. ` +
-            `Minha recomendação é <strong>não concluir</strong> esse Pix de ${valor} agora.`
-        );
-        mostrarFinal(true);
-      } else {
-        balaoBot(
-          "Risco baixo",
-          `Nenhum sinal forte de golpe nas suas respostas. Ainda assim, confira o nome e a chave antes de concluir o Pix de ${valor}.`
-        );
-        mostrarFinal(false);
+  async function responder(pergunta, alternativa) {
+    balaoUsuario(alternativa.texto);
+    try {
+      const etapa = await comDigitando(enviarResposta(sessaoId, pergunta.id, alternativa.id), 500);
+      if (etapa.status === "coacao") return mostrarCoacao(etapa.orientacao_seguranca);
+      if (etapa.status === "aguardando_veredito") return perguntarVeredito();
+      mostrarPergunta(etapa);
+    } catch (erro) {
+      falha(erro, () => mostrarOpcoes(pergunta.alternativas, (alt) => responder(pergunta, alt)));
+    }
+  }
+
+  function perguntarVeredito() {
+    balaoBot(
+      "Agora é com você",
+      `<p>Depois de tudo isso, o que você acha: esse Pix de ${esc(valor)} para ${esc(nome)} é golpe?</p>`
+    );
+    mostrarOpcoes(VEREDITOS, async (v) => {
+      balaoUsuario(v.texto);
+      try {
+        await comDigitando(enviarVeredito(sessaoId, v.id), 300);
+        const resultado = await comDigitando(buscarResultado(sessaoId), 600);
+        mostrarResultado(resultado);
+      } catch (erro) {
+        falha(erro, perguntarVeredito);
       }
-    }, 1000);
+    });
   }
 
-  function mostrarFinal(alto) {
+  function mostrarResultado(r) {
+    const pct = Math.round(r.score_refinado * 100);
+    const paragrafos = r.explicacao_gerada.split(/\n+/).filter(Boolean).map((t) => `<p>${esc(t)}</p>`).join("");
+    balaoBot(
+      `${TITULO_NIVEL[r.nivel_risco]} · ${pct}%`,
+      `<div class="medidor"><span class="${r.nivel_risco}" style="width:${pct}%"></span></div>${paragrafos}`
+    );
+    salvarTransferencia({ triagem: { valor: dados.valor, chavePix: dados.chavePix, nivel: r.nivel_risco } });
+    const arriscado = r.nivel_risco !== "baixo";
+
+    // Decisão de produto: nunca bloquear. O usuário escolhe; registramos se seguiu a recomendação.
+    mostrarOpcoes(
+      [
+        { texto: "Cancelar transferência", destaque: arriscado, acao: () => sair(arriscado, () => { limparTransferencia(); irPara("pix.html"); }) },
+        { texto: "Revisar dados da transferência", acao: () => irPara("confirmacao.html") },
+        { texto: "Concluir mesmo assim", destaque: !arriscado, acao: () => sair(!arriscado, () => irPara("comprovante.html")) },
+      ],
+      (item) => item.acao()
+    );
+  }
+
+  async function sair(seguiuRecomendacao, destino) {
+    await registrarDecisao(sessaoId, seguiuRecomendacao);
+    destino();
+  }
+
+  function mostrarCoacao(orientacao) {
+    balaoBot("Sua segurança em primeiro lugar", `<p>${esc(orientacao)}</p>`, "seguranca");
     opcoes.innerHTML = "";
+    const ligar = document.createElement("a");
+    ligar.className = "chip destaque";
+    ligar.href = "tel:190";
+    ligar.textContent = "Ligar 190";
     const cancelar = document.createElement("button");
-    cancelar.className = alto ? "chip destaque" : "chip";
+    cancelar.className = "chip";
     cancelar.textContent = "Cancelar transferência";
     cancelar.addEventListener("click", () => {
       limparTransferencia();
-      irPara("pix.html");
+      irPara("home.html");
     });
-
-    const seguir = document.createElement("button");
-    seguir.className = "chip";
-    seguir.textContent = "Concluir mesmo assim";
-    seguir.addEventListener("click", () => irPara("comprovante.html"));
-
-    opcoes.append(cancelar, seguir);
+    opcoes.append(ligar, cancelar);
   }
 
   document.getElementById("fechar").addEventListener("click", () => irPara("confirmacao.html"));
 
-  balaoBot("", `Oi, Felipe! Sou a <strong>ia.itaú</strong> e vou te ajudar a checar se essa transferência é segura.`);
-  setTimeout(perguntar, 800);
+  balaoBot(
+    "",
+    `<p>Oi, Felipe! Sou a <strong>ia.itaú</strong> e vou te ajudar a checar se esse Pix de ${esc(valor)} para ${esc(nome)} é seguro. ` +
+      `São 3 perguntas rápidas — e em cada uma eu te conto um truque que golpistas costumam usar.</p>`
+  );
+  setTimeout(iniciar, 600);
 </script>
 </body>
 </html>

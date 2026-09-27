@@ -1,0 +1,324 @@
+"""API REST da triagem educativa de golpes do Pix.
+
+Rodar:  uvicorn triagem.api:app --reload   (a partir de servico/)
+Docs:   http://localhost:8000/docs  (OpenAPI/Swagger)
+
+Autenticação: header `X-API-Key` com uma das chaves de TRIAGEM_API_KEYS.
+"""
+import uuid
+from datetime import datetime, timezone
+from functools import lru_cache
+from typing import Literal
+
+import pandas as pd
+from fastapi import Depends, FastAPI, HTTPException, Security
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import APIKeyHeader
+from pydantic import BaseModel, Field
+
+from . import gemini
+from .armazenamento import Armazenamento
+from .banco_perguntas import carregar_banco
+from .classificador import carregar_modelo, nivel_risco
+from .config import chaves_api, obter
+from .esquema import COLUNAS
+from .seletor import TOTAL_PERGUNTAS, SeletorPonderado
+
+FatorRisco = Literal[
+    "valor_atipico", "destinatario_novo_ou_desconhecido", "dispositivo_nao_reconhecido",
+    "velocidade_digitacao_atipica", "horario_incomum", "chave_pix_recente", "volume_transacoes_24h_alto",
+]
+
+app = FastAPI(
+    title="Triagem educativa de golpes do Pix",
+    version="1.0.0",
+    description=(
+        "Recebe uma transação Pix já sinalizada por um modelo de detecção, conduz o usuário por "
+        "3 perguntas educativas adaptativas, coleta o veredito dele e devolve um score refinado "
+        "com explicação personalizada. Se alguma resposta indicar coação física, o fluxo é "
+        "interrompido e substituído por orientação de segurança."
+    ),
+)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[o.strip() for o in obter("TRIAGEM_CORS_ORIGINS").split(",")],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+_cabecalho_chave = APIKeyHeader(name="X-API-Key", auto_error=False)
+
+
+def autenticar(chave: str | None = Security(_cabecalho_chave)) -> str:
+    if not chave or chave not in chaves_api():
+        raise HTTPException(401, "X-API-Key ausente ou inválida")
+    return chave
+
+
+@lru_cache(maxsize=1)
+def armazenamento() -> Armazenamento:
+    return Armazenamento()
+
+
+def seletor() -> SeletorPonderado:
+    return SeletorPonderado(carregar_banco())
+
+
+# ---------- Schemas ----------
+
+class SituacaoInicial(BaseModel):
+    """Bloco 1: sinais da transação vindos do modelo de detecção de origem."""
+    id_transacao: str | None = Field(None, description="Gerado se omitido")
+    timestamp_transacao: datetime | None = Field(None, description="Agora, se omitido")
+    valor_transacao: float = Field(gt=0)
+    valor_medio_historico_usuario: float = Field(gt=0)
+    desvio_valor_padrao: float | None = Field(None, description="(valor - média) / média; calculado se omitido")
+    destinatario_chave_pix_hash: str
+    tipo_chave_pix: Literal["cpf", "email", "telefone", "aleatoria"]
+    destinatario_novo: bool
+    idade_chave_pix_destinatario: int = Field(ge=0, description="Dias desde o cadastro da chave")
+    horario_transacao_incomum: bool
+    dispositivo_reconhecido: bool
+    velocidade_digitacao_atipica: bool
+    numero_transacoes_conta_24h: int = Field(ge=0)
+    canal_transacao: Literal["app", "internet_banking"]
+    motivo_alerta_modelo_base: str | None = Field(None, max_length=300)
+    fator_risco_principal: FatorRisco
+    fator_risco_secundario: FatorRisco | None = None
+    score_inicial_modelo_base: float = Field(ge=0, le=1)
+
+
+class AlternativaPublica(BaseModel):
+    id: str
+    texto: str
+
+
+class PerguntaPublica(BaseModel):
+    id: str
+    dimensao: str
+    faceta: str
+    texto_didatico: str
+    pergunta: str
+    alternativas: list[AlternativaPublica]
+
+
+class Progresso(BaseModel):
+    atual: int
+    total: int = TOTAL_PERGUNTAS
+
+
+class RespostaEtapa(BaseModel):
+    sessao_id: str
+    status: Literal["em_andamento", "aguardando_veredito", "coacao"]
+    pergunta: PerguntaPublica | None = None
+    progresso: Progresso
+    orientacao_seguranca: str | None = None
+
+
+class RespostaUsuario(BaseModel):
+    pergunta_id: str
+    alternativa_id: str
+
+
+class Veredito(BaseModel):
+    veredito_usuario: Literal["golpe", "nao_e_golpe", "nao_tenho_certeza"]
+
+
+class Resultado(BaseModel):
+    sessao_id: str
+    status: Literal["concluida", "coacao"]
+    sinalizador_coacao_fisica: bool
+    score_inicial_modelo_base: float
+    score_refinado: float | None = Field(None, description="Probabilidade de golpe, com piso 0,15 e teto 0,98")
+    nivel_risco: Literal["baixo", "moderado", "alto"] | None = None
+    veredito_usuario: str | None = None
+    pontuacao_reconhecimento_padroes: int | None = None
+    explicacao_gerada: str
+    fonte_explicacao: Literal["gemini", "template", "seguranca"]
+    versao_modelo: str | None = None
+
+
+class Decisao(BaseModel):
+    usuario_seguiu_recomendacao: bool
+
+
+# ---------- Auxiliares ----------
+
+def _carregar(sessao_id: str) -> dict:
+    sessao = armazenamento().obter(sessao_id)
+    if not sessao:
+        raise HTTPException(404, "Sessão não encontrada")
+    return sessao
+
+
+def _perguntas_feitas(sessao: dict) -> list[str]:
+    return [sessao[f"pergunta_{n}_id"] for n in range(1, TOTAL_PERGUNTAS + 1) if sessao.get(f"pergunta_{n}_id")]
+
+
+def _respondidas(sessao: dict) -> int:
+    return sum(1 for n in range(1, TOTAL_PERGUNTAS + 1) if sessao.get(f"pergunta_{n}_resposta"))
+
+
+def _registrar_pergunta(sessao: dict, n: int) -> tuple[dict, PerguntaPublica]:
+    pergunta = seletor().proxima_pergunta(
+        _perguntas_feitas(sessao), sessao["fator_risco_principal"], sessao["fator_risco_secundario"]
+    )
+    campos = {f"pergunta_{n}_id": pergunta.id, f"pergunta_{n}_dimensao": pergunta.dimensao}
+    return campos, PerguntaPublica(**pergunta.publica())
+
+
+def _perguntas_respostas(sessao: dict) -> list[dict]:
+    banco = carregar_banco()
+    saida = []
+    for n in range(1, TOTAL_PERGUNTAS + 1):
+        pid, resp = sessao.get(f"pergunta_{n}_id"), sessao.get(f"pergunta_{n}_resposta")
+        if pid and resp:
+            pergunta = banco.por_id[pid]
+            alt = pergunta.alternativa(resp)
+            saida.append({
+                "pergunta": pergunta.pergunta, "resposta": alt.texto,
+                "multiplicador": alt.multiplicador, "protetora": alt.protetora,
+            })
+    return saida
+
+
+def _resultado(sessao: dict) -> Resultado:
+    coacao = bool(sessao["sinalizador_coacao_fisica"])
+    return Resultado(
+        sessao_id=sessao["sessao_id"],
+        status=sessao["status"],
+        sinalizador_coacao_fisica=coacao,
+        score_inicial_modelo_base=sessao["score_inicial_modelo_base"],
+        score_refinado=sessao["score_refinado"],
+        nivel_risco=sessao["nivel_risco"],
+        veredito_usuario=sessao["veredito_usuario"],
+        pontuacao_reconhecimento_padroes=sessao["pontuacao_reconhecimento_padroes"],
+        explicacao_gerada=sessao["explicacao_gerada"],
+        fonte_explicacao=sessao["fonte_explicacao"],
+        versao_modelo=sessao["versao_modelo"],
+    )
+
+
+# ---------- Endpoints ----------
+
+@app.post("/v1/sessoes", response_model=RespostaEtapa, status_code=201, tags=["sessões"])
+def criar_sessao(situacao: SituacaoInicial, _: str = Depends(autenticar)):
+    """Inicia a triagem com os sinais da transação e devolve a primeira pergunta."""
+    dados = situacao.model_dump()
+    dados["id_transacao"] = dados["id_transacao"] or str(uuid.uuid4())
+    dados["timestamp_transacao"] = (dados["timestamp_transacao"] or datetime.now(timezone.utc)).isoformat()
+    if dados["desvio_valor_padrao"] is None:
+        media = dados["valor_medio_historico_usuario"]
+        dados["desvio_valor_padrao"] = round((dados["valor_transacao"] - media) / media, 4)
+    dados["sinalizador_coacao_fisica"] = False
+
+    sessao_id = str(uuid.uuid4())
+    campos, pergunta = _registrar_pergunta(dados, 1)
+    armazenamento().criar(sessao_id, {
+        **dados, **campos, "status": "em_andamento",
+        "versao_banco_perguntas": carregar_banco().versao,
+    })
+    return RespostaEtapa(sessao_id=sessao_id, status="em_andamento", pergunta=pergunta, progresso=Progresso(atual=1))
+
+
+@app.post("/v1/sessoes/{sessao_id}/respostas", response_model=RespostaEtapa, tags=["sessões"])
+def responder(sessao_id: str, resposta: RespostaUsuario, _: str = Depends(autenticar)):
+    """Registra a resposta da pergunta atual e devolve a próxima (ou pede o veredito após a última).
+
+    Se a alternativa indicar coação física, o fluxo é encerrado com `status = "coacao"`
+    e `orientacao_seguranca`.
+    """
+    sessao = _carregar(sessao_id)
+    if sessao["status"] != "em_andamento":
+        raise HTTPException(409, f"Sessão não aceita respostas (status: {sessao['status']})")
+    n = _respondidas(sessao) + 1
+    esperada = sessao[f"pergunta_{n}_id"]
+    if resposta.pergunta_id != esperada:
+        raise HTTPException(409, f"Pergunta atual é {esperada}")
+    try:
+        alt = carregar_banco().por_id[esperada].alternativa(resposta.alternativa_id)
+    except KeyError:
+        raise HTTPException(422, "Alternativa inválida para esta pergunta")
+
+    campos = {f"pergunta_{n}_resposta": alt.id, f"pergunta_{n}_multiplicador": alt.multiplicador}
+
+    if alt.coacao:
+        texto, fonte = gemini.gerar_explicacao(sessao, [], None, None, None, coacao=True)
+        armazenamento().atualizar(sessao_id, {
+            **campos, "status": "coacao", "sinalizador_coacao_fisica": True,
+            "explicacao_gerada": texto, "fonte_explicacao": fonte,
+        })
+        return RespostaEtapa(
+            sessao_id=sessao_id, status="coacao", progresso=Progresso(atual=n), orientacao_seguranca=texto
+        )
+
+    if n == TOTAL_PERGUNTAS:
+        armazenamento().atualizar(sessao_id, {**campos, "status": "aguardando_veredito"})
+        return RespostaEtapa(sessao_id=sessao_id, status="aguardando_veredito", progresso=Progresso(atual=n))
+
+    sessao.update(campos)
+    proxima, pergunta = _registrar_pergunta(sessao, n + 1)
+    armazenamento().atualizar(sessao_id, {**campos, **proxima})
+    return RespostaEtapa(sessao_id=sessao_id, status="em_andamento", pergunta=pergunta, progresso=Progresso(atual=n + 1))
+
+
+@app.post("/v1/sessoes/{sessao_id}/veredito", response_model=Resultado, tags=["sessões"])
+def registrar_veredito(sessao_id: str, veredito: Veredito, _: str = Depends(autenticar)):
+    """Registra o veredito do usuário e calcula score refinado + explicação.
+
+    O veredito é logado para análise de concordância humano-modelo, mas não é feature do classificador.
+    """
+    sessao = _carregar(sessao_id)
+    if sessao["status"] != "aguardando_veredito":
+        raise HTTPException(409, f"Sessão não está aguardando veredito (status: {sessao['status']})")
+
+    qa = _perguntas_respostas(sessao)
+    sessao["pontuacao_reconhecimento_padroes"] = sum(q["protetora"] for q in qa)
+    sessao["veredito_usuario"] = veredito.veredito_usuario
+
+    modelo = carregar_modelo()
+    linha = pd.DataFrame([{c: sessao.get(c) for c in COLUNAS}])
+    prob, exibido = modelo.prever_sessoes(linha)
+    prob, score = float(prob[0]), round(float(exibido[0]), 4)
+    nivel = nivel_risco(prob, modelo.limiar)
+
+    texto, fonte = gemini.gerar_explicacao(sessao, qa, veredito.veredito_usuario, score, nivel)
+    armazenamento().atualizar(sessao_id, {
+        "status": "concluida",
+        "veredito_usuario": veredito.veredito_usuario,
+        "pontuacao_reconhecimento_padroes": sessao["pontuacao_reconhecimento_padroes"],
+        "score_refinado": score,
+        "prob_interna": prob,
+        "nivel_risco": nivel,
+        "explicacao_gerada": texto,
+        "fonte_explicacao": fonte,
+        "versao_modelo": modelo.versao,
+    })
+    return _resultado(_carregar(sessao_id))
+
+
+@app.get("/v1/sessoes/{sessao_id}/resultado", response_model=Resultado, tags=["sessões"])
+def obter_resultado(sessao_id: str, _: str = Depends(autenticar)):
+    """Devolve score refinado e explicação (ou a orientação de segurança, em caso de coação)."""
+    sessao = _carregar(sessao_id)
+    if sessao["status"] not in ("concluida", "coacao"):
+        raise HTTPException(409, f"Resultado ainda não disponível (status: {sessao['status']})")
+    return _resultado(sessao)
+
+
+@app.post("/v1/sessoes/{sessao_id}/decisao", status_code=204, tags=["feedback"])
+def registrar_decisao(sessao_id: str, decisao: Decisao, _: str = Depends(autenticar)):
+    """(Opcional) Registra se o usuário seguiu a recomendação — feedback de produto."""
+    _carregar(sessao_id)
+    armazenamento().atualizar(sessao_id, {"usuario_seguiu_recomendacao": decisao.usuario_seguiu_recomendacao})
+
+
+@app.get("/saude", tags=["infra"])
+def saude():
+    modelo = carregar_modelo()
+    return {
+        "ok": True,
+        "versao_modelo": modelo.versao,
+        "versao_banco_perguntas": carregar_banco().versao,
+        "gemini_configurado": bool(obter("GEMINI_API_KEY")),
+    }

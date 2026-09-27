@@ -1,0 +1,100 @@
+{
+  "versao_modelo": "20260927000114",
+  "versao_banco_perguntas": "1.0.0",
+  "modelo_escolhido": "regressao_logistica",
+  "comparacao_modelos": {
+    "regressao_logistica": {
+      "auc_validacao": 0.8747,
+      "auc_teste": 0.8561,
+      "brier_teste_bruto": 0.1362
+    },
+    "lightgbm": {
+      "auc_validacao": 0.8662,
+      "auc_teste": 0.8506,
+      "brier_teste_bruto": 0.1376
+    }
+  },
+  "limiar_decisao": 0.1662,
+  "recall_alvo": 0.9,
+  "teste": {
+    "auc_roc": 0.8561,
+    "brier": 0.1365,
+    "precisao": 0.5613,
+    "recall": 0.867,
+    "f1": 0.6814,
+    "curva_calibracao": [
+      {
+        "prob_media_prevista": 0.021,
+        "fracao_golpe_real": 0.067
+      },
+      {
+        "prob_media_prevista": 0.038,
+        "fracao_golpe_real": 0.042
+      },
+      {
+        "prob_media_prevista": 0.059,
+        "fracao_golpe_real": 0.075
+      },
+      {
+        "prob_media_prevista": 0.088,
+        "fracao_golpe_real": 0.092
+      },
+      {
+        "prob_media_prevista": 0.132,
+        "fracao_golpe_real": 0.167
+      },
+      {
+        "prob_media_prevista": 0.22,
+        "fracao_golpe_real": 0.2
+      },
+      {
+        "prob_media_prevista": 0.383,
+        "fracao_golpe_real": 0.429
+      },
+      {
+        "prob_media_prevista": 0.575,
+        "fracao_golpe_real": 0.617
+      },
+      {
+        "prob_media_prevista": 0.717,
+        "fracao_golpe_real": 0.725
+      },
+      {
+        "prob_media_prevista": 0.83,
+        "fracao_golpe_real": 0.85
+      }
+    ]
+  },
+  "teste_score_exibido_com_teto_piso": {
+    "piso": 0.15,
+    "teto": 0.98,
+    "auc_roc": 0.8479,
+    "brier": 0.1388
+  },
+  "teste_score_base_sozinho": {
+    "auc_roc": 0.7969
+  },
+  "concordancia_humano_modelo_teste": {
+    "golpe": {
+      "n": 378,
+      "modelo_diz_golpe": 0.638,
+      "golpe_real": 0.563
+    },
+    "nao_e_golpe": {
+      "n": 513,
+      "modelo_diz_golpe": 0.429,
+      "golpe_real": 0.144
+    },
+    "nao_tenho_certeza": {
+      "n": 307,
+      "modelo_diz_golpe": 0.466,
+      "golpe_real": 0.339
+    }
+  },
+  "tamanhos": {
+    "treino": 9579,
+    "validacao": 1198,
+    "teste": 1198
+  },
+  "prevalencia_golpe_treino": 0.3188
+}

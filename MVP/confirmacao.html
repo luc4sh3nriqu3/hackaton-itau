@@ -76,6 +76,7 @@
 </div>
 
 <script src="app.js"></script>
+<script src="triagem.js"></script>
 <script>
   const dados = lerTransferencia();
   if (!dados.nome || !dados.valor) irPara("destinatario.html");
@@ -117,9 +118,16 @@
   const overlay = document.getElementById("overlay");
 
   document.getElementById("transferir").addEventListener("click", () => {
+    const avaliada = dados.triagem && dados.triagem.valor === dados.valor && dados.triagem.chavePix === dados.chavePix;
+    const bloco1 = montarBloco1(dados);
+    if (avaliada || bloco1.score_inicial_modelo_base < LIMIAR_ALERTA) {
+      irPara("comprovante.html");
+      return;
+    }
+    salvarTransferencia({ bloco1 });
     document.getElementById("texto-aviso").textContent =
-      `Identificamos sinais de uma provável transação fraudulenta neste Pix de R$ ${valorFormatado} para ${dados.nome}. ` +
-      `A chave é nova para você e o padrão da transferência foge do seu histórico. ` +
+      `Identificamos sinais de uma provável transação fraudulenta neste Pix de R$ ${valorFormatado} para ${dados.nome} ` +
+      `(${bloco1.motivo_alerta_modelo_base}). ` +
       `Antes de concluir, faça uma avaliação rápida com a ia.itaú.`;
     overlay.classList.add("aberto");
   });

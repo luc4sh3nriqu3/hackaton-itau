@@ -1,0 +1,59 @@
+{
+  "modelo": "regressao_logistica",
+  "versao_modelo": "20260927000114",
+  "perguntas_por_sessao": 3,
+  "sessoes_teste": 1198,
+  "golpes_teste": 391,
+  "prevalencia_golpe": 0.3264,
+  "no_limiar_do_modelo": {
+    "limiar": 0.1662,
+    "vp": 339,
+    "fp": 265,
+    "fn": 52,
+    "vn": 542,
+    "acuracia": 0.7354,
+    "precisao": 0.5613,
+    "recall": 0.867,
+    "especificidade": 0.6716,
+    "f1": 0.6814,
+    "acuracia_balanceada": 0.7693,
+    "valor_preditivo_negativo": 0.9125
+  },
+  "no_limiar_0_5": {
+    "limiar": 0.5,
+    "vp": 258,
+    "fp": 92,
+    "fn": 133,
+    "vn": 715,
+    "acuracia": 0.8122,
+    "precisao": 0.7371,
+    "recall": 0.6598,
+    "especificidade": 0.886,
+    "f1": 0.6964,
+    "acuracia_balanceada": 0.7729,
+    "valor_preditivo_negativo": 0.8432
+  },
+  "auc_roc": 0.8561,
+  "auc_pr": 0.75,
+  "brier": 0.1365,
+  "brier_referencia_chute": 0.2199,
+  "log_loss": 0.4343,
+  "score_base_sozinho": {
+    "auc_roc": 0.7969,
+    "auc_pr": 0.6606
+  },
+  "por_nivel_de_risco": {
+    "baixo": {
+      "sessoes": 594,
+      "golpe_real": 0.0875
+    },
+    "moderado": {
+      "sessoes": 254,
+      "golpe_real": 0.3189
+    },
+    "alto": {
+      "sessoes": 350,
+      "golpe_real": 0.7371
+    }
+  }
+}

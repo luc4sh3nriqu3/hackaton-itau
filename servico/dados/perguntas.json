@@ -1,0 +1,416 @@
+{
+  "versao": "1.0.0",
+  "descricao": "Banco de perguntas didáticas da triagem de golpes do Pix. Cada pergunta pertence a uma dimensão de risco (P1–P7) e cobre uma faceta distinta dela. Cada alternativa tem um multiplicador dentro da faixa da dimensão (usado só no gerador sintético), uma flag 'protetora' (resposta que demonstra reconhecer o risco) e uma flag 'coacao' (interrompe o fluxo e aciona a orientação de segurança). 'tipos' lista os tipos de golpe em que a alternativa é mais comum (usado só no gerador).",
+  "dimensoes": {
+    "P1": {"nome": "Canal de contato", "mult_min": 0.25, "mult_max": 3.0},
+    "P2": {"nome": "O que foi pedido", "mult_min": 0.4, "mult_max": 5.0},
+    "P3": {"nome": "Identidade alegada", "mult_min": 0.3, "mult_max": 3.0},
+    "P4": {"nome": "Pressão psicológica", "mult_min": 0.5, "mult_max": 3.2},
+    "P5": {"nome": "Histórico com o destinatário", "mult_min": 0.3, "mult_max": 2.2},
+    "P6": {"nome": "Como o contato começou", "mult_min": 0.4, "mult_max": 2.3},
+    "P7": {"nome": "Verificação independente já feita", "mult_min": 0.2, "mult_max": 3.5}
+  },
+  "perguntas": [
+    {
+      "id": "P1_canal_origem",
+      "dimensao": "P1",
+      "faceta": "canal de origem",
+      "texto_didatico": "Cerca de 65% dos golpes analisados no Brasil começam pelo WhatsApp: é fácil criar um número novo e colocar a foto de outra pessoa ou de uma empresa.",
+      "pergunta": "Por qual canal chegou o pedido que levou a este Pix?",
+      "alternativas": [
+        {"id": "a", "texto": "WhatsApp, de um número que eu não tinha salvo", "multiplicador": 3.0, "protetora": false, "coacao": false, "tipos": ["whatsapp_clonado", "falsa_taxa", "outro"]},
+        {"id": "b", "texto": "WhatsApp, de um contato salvo que estava agindo diferente", "multiplicador": 2.4, "protetora": false, "coacao": false, "tipos": ["whatsapp_clonado"]},
+        {"id": "c", "texto": "Ligação telefônica", "multiplicador": 2.2, "protetora": false, "coacao": false, "tipos": ["falsa_central", "mao_fantasma"]},
+        {"id": "d", "texto": "SMS, e-mail ou rede social", "multiplicador": 1.8, "protetora": false, "coacao": false, "tipos": ["falsa_taxa", "venda_falsa", "outro"]},
+        {"id": "e", "texto": "Pessoalmente, alguém ao meu lado está me obrigando", "multiplicador": 3.0, "protetora": false, "coacao": true, "tipos": ["sequestro_pix"]},
+        {"id": "f", "texto": "Ninguém me contatou: fui eu que decidi pagar", "multiplicador": 0.25, "protetora": true, "coacao": false, "tipos": []}
+      ]
+    },
+    {
+      "id": "P1_troca_canal",
+      "dimensao": "P1",
+      "faceta": "troca de canal",
+      "texto_didatico": "Golpistas costumam puxar a conversa para fora das plataformas oficiais (do chat do marketplace para o WhatsApp, por exemplo), onde não há registro nem proteção ao comprador.",
+      "pergunta": "Durante a conversa, pediram para você mudar de canal?",
+      "alternativas": [
+        {"id": "a", "texto": "Sim, pediram para sair do app/site oficial e ir para o WhatsApp", "multiplicador": 2.8, "protetora": false, "coacao": false, "tipos": ["venda_falsa", "outro"]},
+        {"id": "b", "texto": "Sim, começou por ligação e depois passaram um link ou número", "multiplicador": 2.3, "protetora": false, "coacao": false, "tipos": ["falsa_central", "mao_fantasma"]},
+        {"id": "c", "texto": "Pediram, mas eu recusei e continuei no canal oficial", "multiplicador": 1.2, "protetora": true, "coacao": false, "tipos": []},
+        {"id": "d", "texto": "Não, tudo aconteceu no mesmo canal que eu costumo usar", "multiplicador": 0.6, "protetora": false, "coacao": false, "tipos": []},
+        {"id": "e", "texto": "Não houve conversa com ninguém", "multiplicador": 0.3, "protetora": false, "coacao": false, "tipos": []}
+      ]
+    },
+    {
+      "id": "P1_numero_contato",
+      "dimensao": "P1",
+      "faceta": "número de quem contatou",
+      "texto_didatico": "Números de telefone podem ser falsificados na tela (spoofing): uma ligação que aparece como 'Itaú' ou 0800 não prova que é o banco.",
+      "pergunta": "O número que falou com você parecia oficial?",
+      "alternativas": [
+        {"id": "a", "texto": "Aparecia como número do banco/0800, por isso confiei", "multiplicador": 2.6, "protetora": false, "coacao": false, "tipos": ["falsa_central", "mao_fantasma"]},
+        {"id": "b", "texto": "Era um celular comum com foto de empresa ou de conhecido", "multiplicador": 2.4, "protetora": false, "coacao": false, "tipos": ["whatsapp_clonado", "falsa_taxa"]},
+        {"id": "c", "texto": "Parecia oficial, mas eu desconfiei e desliguei", "multiplicador": 1.1, "protetora": true, "coacao": false, "tipos": []},
+        {"id": "d", "texto": "Era o número que eu já conhecia de longa data", "multiplicador": 0.5, "protetora": false, "coacao": false, "tipos": []},
+        {"id": "e", "texto": "Ninguém entrou em contato comigo", "multiplicador": 0.3, "protetora": false, "coacao": false, "tipos": []}
+      ]
+    },
+    {
+      "id": "P1_link_recebido",
+      "dimensao": "P1",
+      "faceta": "links recebidos",
+      "texto_didatico": "Links enviados por mensagem são o principal caminho para páginas falsas de banco, boletos adulterados e falsos QR codes Pix.",
+      "pergunta": "Você recebeu algum link ou QR code para fazer este pagamento?",
+      "alternativas": [
+        {"id": "a", "texto": "Sim, um link por mensagem e usei ele", "multiplicador": 2.7, "protetora": false, "coacao": false, "tipos": ["falsa_taxa", "venda_falsa", "outro"]},
+        {"id": "b", "texto": "Sim, um QR code ou chave enviado por mensagem", "multiplicador": 2.0, "protetora": false, "coacao": false, "tipos": ["venda_falsa", "whatsapp_clonado", "falsa_central"]},
+        {"id": "c", "texto": "Recebi, mas não cliquei e digitei a chave eu mesmo", "multiplicador": 0.9, "protetora": true, "coacao": false, "tipos": []},
+        {"id": "d", "texto": "Não, peguei a chave direto com a pessoa ou empresa que conheço", "multiplicador": 0.4, "protetora": true, "coacao": false, "tipos": []}
+      ]
+    },
+    {
+      "id": "P2_tipo_pedido",
+      "dimensao": "P2",
+      "faceta": "natureza do pedido",
+      "texto_didatico": "Um terço dos golpes analisados exige pagamento exclusivamente via Pix: é instantâneo e difícil de reverter. Pedidos de 'taxa para liberar' algo são um sinal clássico.",
+      "pergunta": "O que exatamente pediram para você pagar?",
+      "alternativas": [
+        {"id": "a", "texto": "Uma taxa ou imposto para liberar um valor, prêmio ou empréstimo", "multiplicador": 5.0, "protetora": false, "coacao": false, "tipos": ["falsa_taxa", "outro"]},
+        {"id": "b", "texto": "Transferir para uma 'conta segura' para proteger meu dinheiro", "multiplicador": 5.0, "protetora": false, "coacao": false, "tipos": ["falsa_central"]},
+        {"id": "c", "texto": "Um empréstimo ou ajuda urgente para um conhecido", "multiplicador": 3.2, "protetora": false, "coacao": false, "tipos": ["whatsapp_clonado"]},
+        {"id": "d", "texto": "Pagamento antecipado de um produto que ainda não recebi", "multiplicador": 2.2, "protetora": false, "coacao": false, "tipos": ["venda_falsa"]},
+        {"id": "e", "texto": "Um produto/serviço que já recebi ou uma conta do dia a dia", "multiplicador": 0.4, "protetora": false, "coacao": false, "tipos": []},
+        {"id": "f", "texto": "Estou sendo obrigado a transferir sob ameaça", "multiplicador": 5.0, "protetora": false, "coacao": true, "tipos": ["sequestro_pix"]}
+      ]
+    },
+    {
+      "id": "P2_acesso_remoto",
+      "dimensao": "P2",
+      "faceta": "instalação de app / acesso remoto",
+      "texto_didatico": "No golpe da 'mão fantasma', a vítima é convencida a instalar um app de acesso remoto (como AnyDesk ou TeamViewer) e o golpista passa a mexer no celular dela. Banco nenhum pede isso.",
+      "pergunta": "Pediram para você instalar algum aplicativo ou liberar acesso ao seu celular?",
+      "alternativas": [
+        {"id": "a", "texto": "Sim, instalei um app que me pediram", "multiplicador": 5.0, "protetora": false, "coacao": false, "tipos": ["mao_fantasma"]},
+        {"id": "b", "texto": "Pediram para eu ativar compartilhamento de tela ou 'modo de segurança'", "multiplicador": 4.2, "protetora": false, "coacao": false, "tipos": ["mao_fantasma", "falsa_central"]},
+        {"id": "c", "texto": "Pediram, mas eu não instalei", "multiplicador": 1.6, "protetora": true, "coacao": false, "tipos": ["mao_fantasma"]},
+        {"id": "d", "texto": "Não, nada disso", "multiplicador": 0.6, "protetora": false, "coacao": false, "tipos": []}
+      ]
+    },
+    {
+      "id": "P2_dados_pedidos",
+      "dimensao": "P2",
+      "faceta": "dados sensíveis",
+      "texto_didatico": "Senhas, códigos recebidos por SMS e token nunca devem ser informados a ninguém. Quem pede isso, mesmo dizendo ser do banco, está tentando entrar na sua conta.",
+      "pergunta": "Pediram alguma senha, código de SMS ou token?",
+      "alternativas": [
+        {"id": "a", "texto": "Sim, e eu passei", "multiplicador": 4.5, "protetora": false, "coacao": false, "tipos": ["falsa_central", "whatsapp_clonado", "mao_fantasma"]},
+        {"id": "b", "texto": "Pediram um código que chegou por SMS", "multiplicador": 3.8, "protetora": false, "coacao": false, "tipos": ["whatsapp_clonado", "falsa_central"]},
+        {"id": "c", "texto": "Pediram, mas eu me recusei", "multiplicador": 1.5, "protetora": true, "coacao": false, "tipos": []},
+        {"id": "d", "texto": "Não pediram nenhum dado", "multiplicador": 0.6, "protetora": false, "coacao": false, "tipos": []}
+      ]
+    },
+    {
+      "id": "P2_destino_dinheiro",
+      "dimensao": "P2",
+      "faceta": "titular da conta de destino",
+      "texto_didatico": "Quando o nome de quem recebe o Pix não bate com a empresa ou pessoa que pediu o pagamento, é forte sinal de conta 'laranja' usada para receber golpes.",
+      "pergunta": "O nome que aparece como recebedor bate com quem pediu o pagamento?",
+      "alternativas": [
+        {"id": "a", "texto": "Não, é outra pessoa, mas me deram uma explicação", "multiplicador": 3.5, "protetora": false, "coacao": false, "tipos": ["venda_falsa", "whatsapp_clonado", "falsa_taxa", "falsa_central"]},
+        {"id": "b", "texto": "Não conferi o nome", "multiplicador": 2.0, "protetora": false, "coacao": false, "tipos": ["outro", "falsa_taxa"]},
+        {"id": "c", "texto": "Conferi e o nome é diferente, por isso estou em dúvida", "multiplicador": 2.2, "protetora": true, "coacao": false, "tipos": []},
+        {"id": "d", "texto": "Sim, é exatamente a pessoa ou empresa esperada", "multiplicador": 0.5, "protetora": true, "coacao": false, "tipos": []}
+      ]
+    },
+    {
+      "id": "P2_promessa_ganho",
+      "dimensao": "P2",
+      "faceta": "promessa de vantagem",
+      "texto_didatico": "71% dos golpes analisados prometem alguma vantagem financeira: prêmio, desconto enorme, rendimento garantido ou dinheiro 'esquecido'. Se parece bom demais, desconfie.",
+      "pergunta": "Este pagamento está ligado a alguma promessa de ganho ou desconto?",
+      "alternativas": [
+        {"id": "a", "texto": "Sim, um investimento com retorno alto ou garantido", "multiplicador": 4.0, "protetora": false, "coacao": false, "tipos": ["outro"]},
+        {"id": "b", "texto": "Sim, um preço muito abaixo do normal", "multiplicador": 3.0, "protetora": false, "coacao": false, "tipos": ["venda_falsa"]},
+        {"id": "c", "texto": "Sim, liberar um prêmio, restituição ou valor a receber", "multiplicador": 4.5, "protetora": false, "coacao": false, "tipos": ["falsa_taxa"]},
+        {"id": "d", "texto": "Não, é um pagamento comum, sem vantagem especial", "multiplicador": 0.5, "protetora": false, "coacao": false, "tipos": []}
+      ]
+    },
+    {
+      "id": "P3_quem_diz_ser",
+      "dimensao": "P3",
+      "faceta": "identidade alegada",
+      "texto_didatico": "74% dos golpes usam o nome de uma marca ou instituição conhecida (banco, governo, loja famosa) para ganhar confiança logo no início.",
+      "pergunta": "Quem a pessoa disse ser?",
+      "alternativas": [
+        {"id": "a", "texto": "Funcionário do banco ou da central de segurança", "multiplicador": 3.0, "protetora": false, "coacao": false, "tipos": ["falsa_central", "mao_fantasma"]},
+        {"id": "b", "texto": "Órgão do governo, Receita ou Banco Central", "multiplicador": 2.9, "protetora": false, "coacao": false, "tipos": ["falsa_taxa"]},
+        {"id": "c", "texto": "Parente ou amigo com número novo", "multiplicador": 2.8, "protetora": false, "coacao": false, "tipos": ["whatsapp_clonado"]},
+        {"id": "d", "texto": "Vendedor ou loja que eu não conhecia", "multiplicador": 1.8, "protetora": false, "coacao": false, "tipos": ["venda_falsa", "outro"]},
+        {"id": "e", "texto": "Alguém que eu conheço e com quem falei pessoalmente", "multiplicador": 0.3, "protetora": false, "coacao": false, "tipos": []}
+      ]
+    },
+    {
+      "id": "P3_prova_identidade",
+      "dimensao": "P3",
+      "faceta": "provas apresentadas",
+      "texto_didatico": "Golpistas enviam crachás, documentos, protocolos e até seus próprios dados (CPF, endereço), que vazaram, para parecer legítimos. Saber seus dados não prova identidade.",
+      "pergunta": "Que tipo de 'prova' a pessoa mostrou para você acreditar nela?",
+      "alternativas": [
+        {"id": "a", "texto": "Sabia meus dados pessoais (CPF, endereço, últimas compras)", "multiplicador": 2.8, "protetora": false, "coacao": false, "tipos": ["falsa_central", "mao_fantasma", "falsa_taxa"]},
+        {"id": "b", "texto": "Mandou foto de documento, crachá ou comprovante", "multiplicador": 2.5, "protetora": false, "coacao": false, "tipos": ["venda_falsa", "outro"]},
+        {"id": "c", "texto": "Só a foto de perfil e o jeito de escrever", "multiplicador": 2.2, "protetora": false, "coacao": false, "tipos": ["whatsapp_clonado"]},
+        {"id": "d", "texto": "Mostrou, mas sei que isso não prova nada e fiquei desconfiado", "multiplicador": 1.1, "protetora": true, "coacao": false, "tipos": []},
+        {"id": "e", "texto": "Não precisou: conheço a pessoa ou empresa", "multiplicador": 0.4, "protetora": false, "coacao": false, "tipos": []}
+      ]
+    },
+    {
+      "id": "P3_voz_confirmada",
+      "dimensao": "P3",
+      "faceta": "confirmação por voz ou vídeo",
+      "texto_didatico": "No golpe do WhatsApp clonado, o golpista evita ligação de voz ou vídeo com desculpas como 'estou sem microfone' ou 'celular quebrou'. Hoje também existem vozes clonadas por IA.",
+      "pergunta": "Você conseguiu falar por voz ou vídeo com a pessoa que pediu o dinheiro?",
+      "alternativas": [
+        {"id": "a", "texto": "Não, ela deu uma desculpa para não atender", "multiplicador": 3.0, "protetora": false, "coacao": false, "tipos": ["whatsapp_clonado", "venda_falsa"]},
+        {"id": "b", "texto": "Só por áudio curto que ela mandou", "multiplicador": 2.2, "protetora": false, "coacao": false, "tipos": ["whatsapp_clonado", "outro"]},
+        {"id": "c", "texto": "Não tentei", "multiplicador": 1.8, "protetora": false, "coacao": false, "tipos": ["falsa_taxa", "venda_falsa"]},
+        {"id": "d", "texto": "Sim, liguei para o número antigo e ela confirmou", "multiplicador": 0.3, "protetora": true, "coacao": false, "tipos": []}
+      ]
+    },
+    {
+      "id": "P3_conhece_empresa",
+      "dimensao": "P3",
+      "faceta": "reputação de quem recebe",
+      "texto_didatico": "Lojas e perfis falsos são criados em poucas horas. Checar CNPJ, reclamações e tempo de existência do perfil derruba boa parte das vendas falsas.",
+      "pergunta": "O que você sabe sobre quem vai receber este Pix?",
+      "alternativas": [
+        {"id": "a", "texto": "Nada, encontrei hoje", "multiplicador": 2.8, "protetora": false, "coacao": false, "tipos": ["venda_falsa", "outro", "falsa_taxa"]},
+        {"id": "b", "texto": "Vi que o perfil ou site é recente", "multiplicador": 2.4, "protetora": true, "coacao": false, "tipos": ["venda_falsa"]},
+        {"id": "c", "texto": "Pesquisei e tem boas avaliações e CNPJ", "multiplicador": 0.7, "protetora": true, "coacao": false, "tipos": []},
+        {"id": "d", "texto": "É uma pessoa ou empresa com quem já lido há tempo", "multiplicador": 0.3, "protetora": false, "coacao": false, "tipos": []}
+      ]
+    },
+    {
+      "id": "P4_urgencia",
+      "dimensao": "P4",
+      "faceta": "urgência",
+      "texto_didatico": "Pressa é a principal ferramenta do golpista: com prazo curto, a vítima não tem tempo de pensar nem de pedir opinião a alguém.",
+      "pergunta": "Existe algum prazo ou urgência para você fazer este Pix?",
+      "alternativas": [
+        {"id": "a", "texto": "Sim, disseram que tem que ser agora ou perco algo", "multiplicador": 3.2, "protetora": false, "coacao": false, "tipos": ["falsa_central", "falsa_taxa", "whatsapp_clonado", "venda_falsa"]},
+        {"id": "b", "texto": "Sim, em poucas horas", "multiplicador": 2.2, "protetora": false, "coacao": false, "tipos": ["outro", "venda_falsa"]},
+        {"id": "c", "texto": "Estão me apressando, mas decidi parar para checar", "multiplicador": 1.6, "protetora": true, "coacao": false, "tipos": []},
+        {"id": "d", "texto": "Não, posso pagar quando quiser", "multiplicador": 0.5, "protetora": false, "coacao": false, "tipos": []}
+      ]
+    },
+    {
+      "id": "P4_sigilo",
+      "dimensao": "P4",
+      "faceta": "pedido de sigilo",
+      "texto_didatico": "Golpistas pedem segredo ('não conte ao gerente', 'é uma investigação sigilosa') para impedir que alguém de fora perceba a fraude.",
+      "pergunta": "Pediram para você não comentar este pagamento com ninguém?",
+      "alternativas": [
+        {"id": "a", "texto": "Sim, disseram que é sigiloso ou que o gerente está envolvido", "multiplicador": 3.2, "protetora": false, "coacao": false, "tipos": ["falsa_central", "mao_fantasma"]},
+        {"id": "b", "texto": "Sim, pediram para não contar à família", "multiplicador": 2.8, "protetora": false, "coacao": false, "tipos": ["whatsapp_clonado", "outro"]},
+        {"id": "c", "texto": "Pediram, e isso me deixou desconfiado", "multiplicador": 1.8, "protetora": true, "coacao": false, "tipos": []},
+        {"id": "d", "texto": "Não, posso falar com quem eu quiser", "multiplicador": 0.5, "protetora": false, "coacao": false, "tipos": []}
+      ]
+    },
+    {
+      "id": "P4_medo_ameaca",
+      "dimensao": "P4",
+      "faceta": "medo e ameaça",
+      "texto_didatico": "Ameaças como 'sua conta será bloqueada', 'seu nome vai para o SPC' ou 'seu parente está em perigo' são usadas para gerar medo e fazer a vítima agir sem pensar.",
+      "pergunta": "Você está fazendo este Pix por medo de alguma consequência?",
+      "alternativas": [
+        {"id": "a", "texto": "Sim, disseram que minha conta foi invadida ou será bloqueada", "multiplicador": 3.0, "protetora": false, "coacao": false, "tipos": ["falsa_central", "mao_fantasma"]},
+        {"id": "b", "texto": "Sim, ameaçaram processo, multa ou nome sujo", "multiplicador": 2.8, "protetora": false, "coacao": false, "tipos": ["falsa_taxa"]},
+        {"id": "c", "texto": "Sim, há alguém aqui comigo me ameaçando agora", "multiplicador": 3.2, "protetora": false, "coacao": true, "tipos": ["sequestro_pix"]},
+        {"id": "d", "texto": "Senti medo, mas sei que isso é tática de golpe", "multiplicador": 1.4, "protetora": true, "coacao": false, "tipos": []},
+        {"id": "e", "texto": "Não, estou tranquilo", "multiplicador": 0.5, "protetora": false, "coacao": false, "tipos": []}
+      ]
+    },
+    {
+      "id": "P4_emocao",
+      "dimensao": "P4",
+      "faceta": "apelo emocional",
+      "texto_didatico": "Histórias comoventes (parente em apuros, doença, acidente) ativam a vontade de ajudar e diminuem a desconfiança. É o motor do golpe do falso parente.",
+      "pergunta": "O pedido veio acompanhado de uma história emocionante ou de emergência?",
+      "alternativas": [
+        {"id": "a", "texto": "Sim, alguém próximo em emergência ou dificuldade", "multiplicador": 3.0, "protetora": false, "coacao": false, "tipos": ["whatsapp_clonado"]},
+        {"id": "b", "texto": "Sim, uma oportunidade única que eu não posso perder", "multiplicador": 2.4, "protetora": false, "coacao": false, "tipos": ["outro", "venda_falsa", "falsa_taxa"]},
+        {"id": "c", "texto": "Tinha uma história, mas prefiro confirmar antes", "multiplicador": 1.3, "protetora": true, "coacao": false, "tipos": []},
+        {"id": "d", "texto": "Não, é um pagamento sem drama nenhum", "multiplicador": 0.5, "protetora": false, "coacao": false, "tipos": []}
+      ]
+    },
+    {
+      "id": "P5_ja_pagou_antes",
+      "dimensao": "P5",
+      "faceta": "pagamentos anteriores",
+      "texto_didatico": "Destinatário novo não é sinônimo de golpe, mas a maior parte das fraudes envolve alguém para quem a vítima nunca tinha transferido antes.",
+      "pergunta": "Você já fez Pix para esta pessoa ou empresa antes?",
+      "alternativas": [
+        {"id": "a", "texto": "Nunca, é a primeira vez", "multiplicador": 2.2, "protetora": false, "coacao": false, "tipos": ["falsa_central", "falsa_taxa", "venda_falsa", "outro", "mao_fantasma", "sequestro_pix"]},
+        {"id": "b", "texto": "Já paguei a essa pessoa, mas por outra chave", "multiplicador": 1.9, "protetora": false, "coacao": false, "tipos": ["whatsapp_clonado"]},
+        {"id": "c", "texto": "Uma ou duas vezes", "multiplicador": 0.8, "protetora": false, "coacao": false, "tipos": []},
+        {"id": "d", "texto": "Sim, várias vezes, é alguém de confiança", "multiplicador": 0.3, "protetora": false, "coacao": false, "tipos": []}
+      ]
+    },
+    {
+      "id": "P5_chave_mudou",
+      "dimensao": "P5",
+      "faceta": "troca de chave",
+      "texto_didatico": "'Mudei de conta, agora paga nesta chave' é uma frase típica de golpe: o golpista se passa por alguém conhecido e redireciona o pagamento.",
+      "pergunta": "Alguém avisou recentemente que a chave Pix ou a conta mudou?",
+      "alternativas": [
+        {"id": "a", "texto": "Sim, e o aviso veio por mensagem", "multiplicador": 2.2, "protetora": false, "coacao": false, "tipos": ["whatsapp_clonado", "venda_falsa"]},
+        {"id": "b", "texto": "Sim, mas confirmei pessoalmente ou por ligação", "multiplicador": 0.8, "protetora": true, "coacao": false, "tipos": []},
+        {"id": "c", "texto": "Não, é uma chave nova porque é um destinatário novo", "multiplicador": 1.4, "protetora": false, "coacao": false, "tipos": ["falsa_central", "falsa_taxa", "venda_falsa", "outro"]},
+        {"id": "d", "texto": "Não, é a mesma chave de sempre", "multiplicador": 0.3, "protetora": false, "coacao": false, "tipos": []}
+      ]
+    },
+    {
+      "id": "P5_relacao",
+      "dimensao": "P5",
+      "faceta": "tipo de relação",
+      "texto_didatico": "Relações que existem só online (redes sociais, apps de namoro, grupos de investimento) são o ambiente do golpe do falso amor e dos falsos investimentos.",
+      "pergunta": "Como você descreveria sua relação com quem vai receber?",
+      "alternativas": [
+        {"id": "a", "texto": "Conheço só pela internet, nunca vi pessoalmente", "multiplicador": 2.2, "protetora": false, "coacao": false, "tipos": ["outro", "venda_falsa"]},
+        {"id": "b", "texto": "Não tenho relação nenhuma", "multiplicador": 1.8, "protetora": false, "coacao": false, "tipos": ["falsa_central", "falsa_taxa", "mao_fantasma", "sequestro_pix"]},
+        {"id": "c", "texto": "Conhecido, mas o pedido está estranho", "multiplicador": 1.6, "protetora": true, "coacao": false, "tipos": ["whatsapp_clonado"]},
+        {"id": "d", "texto": "Família, amigo ou empresa que uso sempre", "multiplicador": 0.3, "protetora": false, "coacao": false, "tipos": []}
+      ]
+    },
+    {
+      "id": "P5_valor_habitual",
+      "dimensao": "P5",
+      "faceta": "valor habitual",
+      "texto_didatico": "Golpes costumam pedir valores redondos e bem acima do que você costuma transferir — e, se der certo, voltam pedindo mais.",
+      "pergunta": "Comparado ao que você costuma pagar para esse destinatário, o valor é:",
+      "alternativas": [
+        {"id": "a", "texto": "Nunca paguei antes, então não sei", "multiplicador": 1.8, "protetora": false, "coacao": false, "tipos": ["falsa_central", "falsa_taxa", "venda_falsa", "outro", "mao_fantasma"]},
+        {"id": "b", "texto": "Bem maior que o normal, e já pediram outros Pix hoje", "multiplicador": 2.2, "protetora": false, "coacao": false, "tipos": ["whatsapp_clonado", "falsa_taxa", "sequestro_pix", "outro"]},
+        {"id": "c", "texto": "Maior que o normal, e isso me chamou atenção", "multiplicador": 1.4, "protetora": true, "coacao": false, "tipos": []},
+        {"id": "d", "texto": "Parecido com o de sempre", "multiplicador": 0.3, "protetora": false, "coacao": false, "tipos": []}
+      ]
+    },
+    {
+      "id": "P6_quem_iniciou",
+      "dimensao": "P6",
+      "faceta": "quem iniciou",
+      "texto_didatico": "Quando é você quem procura um serviço pelo canal oficial, o risco cai muito. Quando o contato chega do nada, é o golpista quem está no controle da história.",
+      "pergunta": "Quem começou esta conversa?",
+      "alternativas": [
+        {"id": "a", "texto": "A outra pessoa me procurou do nada", "multiplicador": 2.3, "protetora": false, "coacao": false, "tipos": ["falsa_central", "whatsapp_clonado", "falsa_taxa", "mao_fantasma"]},
+        {"id": "b", "texto": "Eu respondi a um anúncio ou publicação", "multiplicador": 1.8, "protetora": false, "coacao": false, "tipos": ["venda_falsa", "outro"]},
+        {"id": "c", "texto": "Eu procurei, pelo site ou app oficial", "multiplicador": 0.5, "protetora": true, "coacao": false, "tipos": []},
+        {"id": "d", "texto": "É um pagamento de rotina, não houve conversa", "multiplicador": 0.4, "protetora": false, "coacao": false, "tipos": []}
+      ]
+    },
+    {
+      "id": "P6_onde_encontrou",
+      "dimensao": "P6",
+      "faceta": "onde encontrou a oferta",
+      "texto_didatico": "Anúncios patrocinados em redes sociais e resultados pagos em buscadores são muito usados por lojas falsas e falsos leilões, porque aparecem antes dos sites verdadeiros.",
+      "pergunta": "Onde você encontrou este produto, serviço ou oferta?",
+      "alternativas": [
+        {"id": "a", "texto": "Anúncio em rede social", "multiplicador": 2.3, "protetora": false, "coacao": false, "tipos": ["venda_falsa", "outro"]},
+        {"id": "b", "texto": "Site de leilão ou marketplace, falando fora da plataforma", "multiplicador": 2.2, "protetora": false, "coacao": false, "tipos": ["venda_falsa"]},
+        {"id": "c", "texto": "Grupo de WhatsApp ou Telegram", "multiplicador": 2.0, "protetora": false, "coacao": false, "tipos": ["outro", "falsa_taxa"]},
+        {"id": "d", "texto": "Não é uma compra", "multiplicador": 1.0, "protetora": false, "coacao": false, "tipos": ["falsa_central", "whatsapp_clonado", "mao_fantasma", "sequestro_pix"]},
+        {"id": "e", "texto": "Loja ou prestador que já conheço", "multiplicador": 0.4, "protetora": false, "coacao": false, "tipos": []}
+      ]
+    },
+    {
+      "id": "P6_primeira_mensagem",
+      "dimensao": "P6",
+      "faceta": "primeira mensagem",
+      "texto_didatico": "Mensagens que começam com 'oi, troquei de número', 'identificamos uma compra suspeita' ou 'você tem um valor a receber' são aberturas clássicas de roteiros de golpe.",
+      "pergunta": "Qual destas se parece com a primeira mensagem que você recebeu?",
+      "alternativas": [
+        {"id": "a", "texto": "\"Oi, troquei de número, salva esse aqui\"", "multiplicador": 2.3, "protetora": false, "coacao": false, "tipos": ["whatsapp_clonado"]},
+        {"id": "b", "texto": "\"Identificamos uma compra suspeita na sua conta\"", "multiplicador": 2.3, "protetora": false, "coacao": false, "tipos": ["falsa_central", "mao_fantasma"]},
+        {"id": "c", "texto": "\"Você tem um valor/prêmio a receber\"", "multiplicador": 2.2, "protetora": false, "coacao": false, "tipos": ["falsa_taxa", "outro"]},
+        {"id": "d", "texto": "Nenhuma dessas, e reconheço essas frases como golpe", "multiplicador": 0.6, "protetora": true, "coacao": false, "tipos": []},
+        {"id": "e", "texto": "Não recebi mensagem, eu que iniciei", "multiplicador": 0.4, "protetora": false, "coacao": false, "tipos": []}
+      ]
+    },
+    {
+      "id": "P6_tempo_conversa",
+      "dimensao": "P6",
+      "faceta": "tempo de relacionamento",
+      "texto_didatico": "Golpes rápidos resolvem tudo em minutos. Golpes elaborados constroem confiança ao longo de dias antes de pedir dinheiro. Nos dois casos, o pedido de Pix é o momento de parar.",
+      "pergunta": "Há quanto tempo você conversa com quem pediu este pagamento?",
+      "alternativas": [
+        {"id": "a", "texto": "Menos de uma hora", "multiplicador": 2.2, "protetora": false, "coacao": false, "tipos": ["falsa_central", "whatsapp_clonado", "mao_fantasma", "falsa_taxa", "sequestro_pix"]},
+        {"id": "b", "texto": "Alguns dias ou semanas, só online", "multiplicador": 1.9, "protetora": false, "coacao": false, "tipos": ["outro", "venda_falsa"]},
+        {"id": "c", "texto": "Meses ou anos", "multiplicador": 0.5, "protetora": false, "coacao": false, "tipos": []},
+        {"id": "d", "texto": "Não houve conversa", "multiplicador": 0.4, "protetora": false, "coacao": false, "tipos": []}
+      ]
+    },
+    {
+      "id": "P7_ligou_banco",
+      "dimensao": "P7",
+      "faceta": "canal oficial do banco",
+      "texto_didatico": "A melhor defesa contra a falsa central é simples: desligue e ligue você mesmo para o número que está no verso do cartão ou no app. O banco nunca liga pedindo Pix.",
+      "pergunta": "Você confirmou esta situação pelo canal oficial do seu banco (app ou número do cartão)?",
+      "alternativas": [
+        {"id": "a", "texto": "Não, a pessoa disse que já era o banco", "multiplicador": 3.5, "protetora": false, "coacao": false, "tipos": ["falsa_central", "mao_fantasma"]},
+        {"id": "b", "texto": "Não, ligaram de volta para o número que me passaram", "multiplicador": 3.0, "protetora": false, "coacao": false, "tipos": ["falsa_central", "falsa_taxa"]},
+        {"id": "c", "texto": "Não achei necessário", "multiplicador": 1.5, "protetora": false, "coacao": false, "tipos": ["venda_falsa", "outro", "whatsapp_clonado"]},
+        {"id": "d", "texto": "Sim, pelo app ou pelo número do cartão", "multiplicador": 0.2, "protetora": true, "coacao": false, "tipos": []}
+      ]
+    },
+    {
+      "id": "P7_confirmou_pessoa",
+      "dimensao": "P7",
+      "faceta": "confirmação com a pessoa real",
+      "texto_didatico": "Se o pedido vem de um conhecido, confirme por outro canal: ligue para o número antigo, fale com um familiar em comum ou faça uma pergunta que só ele saberia.",
+      "pergunta": "Você confirmou o pedido com a pessoa por outro meio?",
+      "alternativas": [
+        {"id": "a", "texto": "Não, confiei na mensagem", "multiplicador": 3.2, "protetora": false, "coacao": false, "tipos": ["whatsapp_clonado", "venda_falsa"]},
+        {"id": "b", "texto": "Tentei, mas não consegui falar", "multiplicador": 2.5, "protetora": true, "coacao": false, "tipos": ["whatsapp_clonado"]},
+        {"id": "c", "texto": "Não se aplica, não conheço a pessoa", "multiplicador": 1.8, "protetora": false, "coacao": false, "tipos": ["falsa_central", "falsa_taxa", "outro", "mao_fantasma"]},
+        {"id": "d", "texto": "Sim, confirmei por ligação ou pessoalmente", "multiplicador": 0.2, "protetora": true, "coacao": false, "tipos": []}
+      ]
+    },
+    {
+      "id": "P7_pesquisou",
+      "dimensao": "P7",
+      "faceta": "pesquisa sobre o destinatário",
+      "texto_didatico": "Uma busca rápida pelo nome, CNPJ ou chave Pix em sites de reclamação costuma revelar golpes já denunciados por outras vítimas.",
+      "pergunta": "Você pesquisou o nome, CNPJ ou a chave Pix do destinatário?",
+      "alternativas": [
+        {"id": "a", "texto": "Não pesquisei", "multiplicador": 2.2, "protetora": false, "coacao": false, "tipos": ["venda_falsa", "outro", "falsa_taxa", "whatsapp_clonado", "falsa_central"]},
+        {"id": "b", "texto": "Pesquisei e encontrei reclamações", "multiplicador": 3.5, "protetora": true, "coacao": false, "tipos": ["venda_falsa", "outro"]},
+        {"id": "c", "texto": "Pesquisei e não achei nada", "multiplicador": 1.2, "protetora": true, "coacao": false, "tipos": []},
+        {"id": "d", "texto": "Pesquisei e é uma empresa ou pessoa legítima", "multiplicador": 0.3, "protetora": true, "coacao": false, "tipos": []}
+      ]
+    },
+    {
+      "id": "P7_segunda_opiniao",
+      "dimensao": "P7",
+      "faceta": "segunda opinião",
+      "texto_didatico": "Contar a situação para alguém de confiança antes de pagar quebra o isolamento que o golpista tenta criar. Muitas vítimas percebem o golpe ao explicar a história em voz alta.",
+      "pergunta": "Você comentou este pagamento com alguém de confiança?",
+      "alternativas": [
+        {"id": "a", "texto": "Não, e prefiro não comentar", "multiplicador": 2.6, "protetora": false, "coacao": false, "tipos": ["falsa_central", "mao_fantasma", "outro", "sequestro_pix"]},
+        {"id": "b", "texto": "Não tive tempo", "multiplicador": 2.0, "protetora": false, "coacao": false, "tipos": ["whatsapp_clonado", "falsa_taxa", "venda_falsa"]},
+        {"id": "c", "texto": "Sim, e a pessoa achou estranho", "multiplicador": 2.8, "protetora": true, "coacao": false, "tipos": []},
+        {"id": "d", "texto": "Sim, e a pessoa achou tudo normal", "multiplicador": 0.4, "protetora": true, "coacao": false, "tipos": []}
+      ]
+    },
+    {
+      "id": "P7_comprovante",
+      "dimensao": "P7",
+      "faceta": "comprovantes e boletos",
+      "texto_didatico": "Comprovantes de pagamento e boletos são facilmente falsificados. Só confie no que aparece no seu próprio app — nunca num print enviado por outra pessoa.",
+      "pergunta": "Te mandaram algum comprovante, print ou boleto para justificar este Pix?",
+      "alternativas": [
+        {"id": "a", "texto": "Sim, um comprovante de que me pagaram algo a mais e preciso devolver", "multiplicador": 3.5, "protetora": false, "coacao": false, "tipos": ["outro", "venda_falsa"]},
+        {"id": "b", "texto": "Sim, um boleto ou guia de taxa", "multiplicador": 3.0, "protetora": false, "coacao": false, "tipos": ["falsa_taxa"]},
+        {"id": "c", "texto": "Sim, mas conferi no meu app e não bate", "multiplicador": 2.4, "protetora": true, "coacao": false, "tipos": []},
+        {"id": "d", "texto": "Não, nada disso", "multiplicador": 0.6, "protetora": false, "coacao": false, "tipos": []}
+      ]
+    }
+  ]
+}
