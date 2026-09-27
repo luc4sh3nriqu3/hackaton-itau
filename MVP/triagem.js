@@ -7,6 +7,14 @@ const TRIAGEM_API_KEY = "demo-mvp-key"; // protótipo: em produção a chave fic
 // Acima deste score inicial a confirmação abre o alerta e oferece a avaliação.
 const LIMIAR_ALERTA = 0.65;
 
+// Identifica o cliente logado (no protótipo, fixo). Usado para buscar os feedbacks pendentes dele.
+const CLIENTE_ID = "cliente-demo-felipe";
+
+// Texto curto que o pop-up de feedback mostra depois, ex.: "Pix de R$ 1.000,00 para Lucas".
+function descreverPix(dados) {
+  return `Pix de R$ ${formatarMoeda(dados.valor)} para ${(dados.nome || "o destinatário").split(" ")[0]}`;
+}
+
 // ---------------------------------------------------------------------------
 // PLACEHOLDER — modelo de detecção de origem (fora do escopo deste projeto)
 //
@@ -102,10 +110,19 @@ async function chamarTriagem(metodo, caminho, corpo) {
   return resposta.status === 204 ? null : resposta.json();
 }
 
-const iniciarSessao = (bloco1) => chamarTriagem("POST", "/v1/sessoes", bloco1);
+// Chat (3 perguntas → resultado)
+const iniciarSessao = (bloco1, dados) =>
+  chamarTriagem("POST", "/v1/sessoes", { ...bloco1, cliente_id: CLIENTE_ID, descricao_exibicao: descreverPix(dados) });
 const enviarResposta = (id, perguntaId, alternativaId) =>
   chamarTriagem("POST", `/v1/sessoes/${id}/respostas`, { pergunta_id: perguntaId, alternativa_id: alternativaId });
-const enviarVeredito = (id, veredito) => chamarTriagem("POST", `/v1/sessoes/${id}/veredito`, { veredito_usuario: veredito });
 const buscarResultado = (id) => chamarTriagem("GET", `/v1/sessoes/${id}/resultado`);
-const registrarDecisao = (id, seguiu) =>
-  chamarTriagem("POST", `/v1/sessoes/${id}/decisao`, { usuario_seguiu_recomendacao: seguiu }).catch(() => null);
+// decisao: "continuar" | "cancelar". Só "continuar" gera pop-up de feedback depois.
+const registrarDecisao = (id, decisao) =>
+  chamarTriagem("POST", `/v1/sessoes/${id}/decisao`, { decisao }).catch(() => null);
+
+// Feedback pós-transação (usado por feedback/feedback.js)
+const buscarFeedbacksPendentes = () =>
+  chamarTriagem("GET", `/v1/feedbacks/pendentes?cliente_id=${encodeURIComponent(CLIENTE_ID)}`);
+const marcarFeedbackExibido = (id) => chamarTriagem("POST", `/v1/sessoes/${id}/feedback/exibido`);
+// resposta: "golpe" | "nao_golpe" | "sem_resposta"
+const enviarFeedback = (id, resposta) => chamarTriagem("POST", `/v1/sessoes/${id}/feedback`, { feedback_cliente: resposta });

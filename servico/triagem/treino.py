@@ -78,8 +78,8 @@ def _metricas(y, p, limiar):
 def _concordancia(df, p, limiar):
     modelo_golpe = p >= limiar
     out = {}
-    for veredito, grupo in df.assign(_m=modelo_golpe).groupby("veredito_usuario"):
-        out[veredito] = {
+    for feedback, grupo in df.assign(_m=modelo_golpe).groupby("feedback_cliente"):
+        out[feedback] = {
             "n": int(len(grupo)),
             "modelo_diz_golpe": round(float(grupo["_m"].mean()), 3),
             "golpe_real": round(float(_rotulo(grupo).mean()), 3),
@@ -133,7 +133,7 @@ def main():
             "brier": round(brier_score_loss(y["teste"], np.clip(p_te_cal, PISO, TETO)), 4),
         },
         "teste_score_base_sozinho": {"auc_roc": round(roc_auc_score(y["teste"], score_base_te), 4)},
-        "concordancia_humano_modelo_teste": _concordancia(limpos["teste"], p_te_cal, modelo.limiar),
+        "concordancia_feedback_cliente_modelo_teste": _concordancia(limpos["teste"], p_te_cal, modelo.limiar),
         "tamanhos": {s: int(len(d)) for s, d in limpos.items()},
         "prevalencia_golpe_treino": round(float(y["treino"].mean()), 4),
     }

@@ -482,10 +482,5 @@ h1 {
 }
 .msg-bot .pergunta { font-weight: 600; color: var(--texto) !important; }
 .msg-bot p + p { margin-top: 8px; }
-.medidor { height: 8px; border-radius: 4px; background: var(--cinza-claro); overflow: hidden; margin: 4px 0 12px; }
-.medidor span { display: block; height: 100%; border-radius: 4px; }
-.medidor .baixo { background: #2e9e5b; }
-.medidor .moderado { background: #e0a100; }
-.medidor .alto { background: #d62222; }
 .msg-bot.seguranca > strong { color: #d62222; }
 a.chip { text-decoration: none; display: block; }

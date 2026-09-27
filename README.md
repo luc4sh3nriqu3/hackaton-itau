@@ -2,7 +2,9 @@
 
 Protótipo de app bancário (pasta `MVP/`) integrado a um serviço de **triagem educativa de golpes do Pix** (pasta `servico/`).
 
-Quando uma transferência Pix parece suspeita, o app abre uma conversa com a ia.itaú. São 3 perguntas de múltipla escolha, escolhidas conforme a transação, e cada uma ensina um truque usado por golpistas. Depois o usuário dá o próprio veredito e recebe uma probabilidade refinada de golpe, com uma explicação personalizada. A transferência nunca é bloqueada: a decisão final é do usuário.
+Quando uma transferência Pix parece suspeita, o app abre uma conversa com a ia.itaú. São 3 perguntas de múltipla escolha, escolhidas conforme a transação, e cada uma ensina um truque usado por golpistas. Com base nas respostas, o serviço calcula uma probabilidade refinada de golpe. Se houver sinais de risco, o chat pergunta *"Você não gostaria de repensar sobre essa transação por alguns minutos?"* e explica os motivos com calma, sem números nem alarme. A transferência nunca é bloqueada: o cliente escolhe entre "Continuar para transação mesmo assim" e "Cancelar transação".
+
+Se ele continuar, na próxima vez que abrir o app aparece um pop-up perguntando se aquele Pix era golpe. A resposta (`golpe`, `nao_golpe` ou `sem_resposta`) vai para a base e ajuda a confirmar desfechos reais para o retreino.
 
 ## Como rodar
 
@@ -30,7 +32,7 @@ cd MVP && python3 -m http.server 5500
 cd servico && ../.venv/bin/python -m pytest -q tests
 ```
 
-Roteiro da demo: Pix → digite uma chave nova (por exemplo `golpista@mail.com`) → valor de R$ 1.000,00 → Transferir → "Iniciar avaliação".
+Roteiro da demo: Pix → digite uma chave nova (por exemplo `golpista@mail.com`) → valor de R$ 1.000,00 → Transferir → "Iniciar avaliação" → responda as 3 perguntas → "Continuar para transação mesmo assim" → comprovante → "Voltar ao início": o pop-up de feedback aparece na home. O tempo até o pop-up aparecer é `FEEDBACK_ATRASO_MINUTOS` no `servico/.env` (0 na demo).
 
 ### Onde colocar a chave do Gemini
 
@@ -66,7 +68,10 @@ servico/
 MVP/
   triagem.js                 cliente da API + heurística mock do Bloco 1 (PLACEHOLDER)
   confirmacao.html           decide se abre o alerta
-  avaliacao.html             chat com 3 perguntas → veredito → resultado
+  avaliacao.html             chat com 3 perguntas → "repensar" → continuar ou cancelar
+  home.html                  verifica se há feedback pendente ao abrir
+  feedback/                  pop-up de feedback: interface separada da integração com a API
+                             (contrato e como trocar a tela em MVP/feedback/README.md)
 ```
 
 ### API REST (`X-API-Key`, JSON, OpenAPI em `/docs`)
@@ -74,13 +79,15 @@ MVP/
 | Rota | O que faz |
 |---|---|
 | `POST /v1/sessoes` | Recebe o Bloco 1 e devolve `sessao_id` e a 1ª pergunta |
-| `POST /v1/sessoes/{id}/respostas` | Recebe `{pergunta_id, alternativa_id}` e devolve a próxima pergunta, `aguardando_veredito` ou `coacao` |
-| `POST /v1/sessoes/{id}/veredito` | Recebe `{veredito_usuario}` e calcula score e explicação |
+| `POST /v1/sessoes/{id}/respostas` | Recebe `{pergunta_id, alternativa_id}` e devolve a próxima pergunta. Na 3ª resposta já calcula score e explicação e devolve `concluida`; em caso de coação, `coacao` |
 | `GET /v1/sessoes/{id}/resultado` | Devolve `score_refinado`, `nivel_risco`, `explicacao_gerada` e `fonte_explicacao` |
-| `POST /v1/sessoes/{id}/decisao` | (extra, opcional) Recebe `usuario_seguiu_recomendacao` |
+| `POST /v1/sessoes/{id}/decisao` | Recebe `{decisao: "continuar" \| "cancelar"}`, o que o cliente fez depois do chat |
+| `GET /v1/feedbacks/pendentes?cliente_id=…` | Transações que o cliente continuou e cujo pop-up de feedback ainda não apareceu |
+| `POST /v1/sessoes/{id}/feedback/exibido` | Marca que o pop-up apareceu (não é perguntado de novo) |
+| `POST /v1/sessoes/{id}/feedback` | Recebe `{feedback_cliente: "golpe" \| "nao_golpe" \| "sem_resposta"}` |
 | `GET /saude` | Versões e se o Gemini está configurado |
 
-As perguntas chegam ao cliente sem multiplicadores nem flags internas. O MVP consome exatamente essa API pública, sem atalho interno.
+O `POST /v1/sessoes` também aceita `cliente_id` e `descricao_exibicao` (opcionais), usados só pelo pop-up de feedback. As perguntas chegam ao cliente sem multiplicadores nem flags internas. O MVP consome exatamente essa API pública, sem atalho interno.
 
 ## Base de dados (variáveis analisadas)
 
@@ -119,11 +126,11 @@ Cada linha da base é **uma sessão de triagem**, com **38 colunas** em 3 blocos
 | `pergunta_N_multiplicador` | Peso de risco da alternativa, usado só para gerar o gabarito sintético | **Não** (o modelo aprende os próprios pesos) |
 | `sinalizador_coacao_fisica` | Se alguma resposta indicou ameaça física em andamento | Não (interrompe o fluxo e mostra a orientação de segurança) |
 
-**Bloco 3: veredito e resultado (7 colunas).**
+**Bloco 3: resultado e feedback (7 colunas).**
 
 | Campo | O que é | Modelo usa? |
 |---|---|---|
-| `veredito_usuario` | O que o cliente acha: golpe, não é golpe ou não tem certeza | **Não** (para o modelo não só copiar o palpite; fica no log para comparar humano × modelo) |
+| `feedback_cliente` | Resposta do pop-up pós-transação: `golpe` (quer falar com o suporte), `nao_golpe` (era legítima) ou `sem_resposta` (fechou ou nunca respondeu; é o valor padrão) | **Não** (chega horas depois; serve para confirmar o desfecho no retreino) |
 | `pontuacao_reconhecimento_padroes` | Quantas das 3 respostas mostram que o cliente reconhece o risco (0 a 3) | Sim |
 | `score_refinado` | Probabilidade final calculada pelo modelo (saída) | Não (é o resultado) |
 | `rotulo_real_golpe` | Gabarito: era golpe ou não | Não (é o que o modelo tenta acertar) |
@@ -148,7 +155,7 @@ cd servico && ../.venv/bin/python -m triagem.relatorio
 <!-- METRICAS:INICIO -->
 <!-- Seção gerada por `python -m triagem.relatorio` (a partir de servico/). Não edite à mão. -->
 
-Avaliado em **1198 sessões de teste** que o modelo nunca viu (391 golpes, 32,6%), com **3 perguntas por sessão**. Modelo: `regressao_logistica`, versão `20260927000114`. O relatório completo está em [`servico/relatorios/metricas.md`](servico/relatorios/metricas.md).
+Avaliado em **1198 sessões de teste** que o modelo nunca viu (391 golpes, 32,6%), com **3 perguntas por sessão**. Modelo: `regressao_logistica`, versão `20260927115952`. O relatório completo está em [`servico/relatorios/metricas.md`](servico/relatorios/metricas.md).
 
 **Resumo:** de cada 100 golpes, o modelo alerta ~87; de cada 10 alertas, ~6 são golpe de verdade. As 3 perguntas levam a AUC de 0,80 (só o score inicial) para 0,86.
 
@@ -229,13 +236,15 @@ A matriz soma 1198 e não 12.000 porque só usa o teste: avaliar com sessões qu
   - O rótulo usa `logit(score_base) + 0,8·Σlog(mult)` sobre as 3 respostas. Resultado: 12.000 sessões, ~32% de golpe e ~0,2% de coação, com split 80/10/10.
 - **Classificador:**
   - Features: o Bloco 1, o one-hot de cada pergunta e alternativa (e não por posição, porque a dimensão de cada posição varia), a contagem por dimensão e `pontuacao_reconhecimento_padroes`.
-  - Não usa os multiplicadores nem `veredito_usuario`. As sessões com coação ficam fora do treino.
+  - Não usa os multiplicadores nem `feedback_cliente`. As sessões com coação ficam fora do treino.
   - Comparei regressão logística e LightGBM, e a logística venceu na validação (o gerador é linear no logit). A calibração é de Platt.
   - O limiar é o maior que mantém recall ≥ 90% na validação.
   - A decisão usa a probabilidade sem corte. O score exibido tem piso 0,15 e teto 0,98.
 - **Métricas:** veja a seção [Métricas do modelo](#métricas-do-modelo), gerada pelo script `triagem/relatorio.py`.
 - **Coação física:** a sessão é interrompida na hora e a API devolve uma orientação de segurança **fixa e revisada** (190, MED, banco), sem passar pelo Gemini. Numa situação de risco físico, esse texto não deve depender de rede nem da variação de um modelo generativo.
-- **Log para retreino:** o SQLite (`servico/triagem.db`) guarda uma linha por sessão com as colunas do esquema, mais o status, as versões de modelo e de banco e a probabilidade interna. Quando o desfecho real for confirmado, basta preencher `rotulo_real_golpe` e `rotulo_tipo_golpe`, e as linhas passam a servir de dado real no mesmo formato do sintético. O retreino automático fica fora do escopo desta versão.
+- **Log para retreino:** o SQLite (`servico/triagem.db`) guarda uma linha por sessão com as colunas do esquema, mais o status, as versões de modelo e de banco, a probabilidade interna, a decisão do cliente (`decisao_cliente`) e os horários do pop-up (`feedback_exibido_em`, `feedback_respondido_em`). O `feedback_cliente` é o primeiro indício do desfecho real. Quando o desfecho for confirmado (feedback mais confirmação do banco), basta preencher `rotulo_real_golpe` e `rotulo_tipo_golpe`, e as linhas passam a servir de dado real no mesmo formato do sintético. O retreino automático fica fora do escopo desta versão.
+- **Feedback pós-transação:** só aparece para quem escolheu continuar, uma única vez por transação e depois de `FEEDBACK_ATRASO_MINUTOS`. Se o cliente fechar ou sair sem responder, fica `sem_resposta`: nada é suposto. No dataset sintético, `feedback_cliente` é simulado para todas as sessões (quem tem menos consciência de risco responde menos), só para testar o pipeline.
+- **Tom do fim do chat:** o texto (Gemini ou template) cita os sinais que o próprio cliente contou, não mostra números nem porcentagens e termina convidando a uma pausa e a uma checagem por canal oficial. A probabilidade continua calculada e salva na base.
 
 ## Placeholders e limitações
 

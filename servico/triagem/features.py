@@ -8,7 +8,8 @@ Compartilhada entre treino e produção para garantir o mesmo vetor nos dois lad
   codificadas por pergunta/alternativa (`resp__<pergunta>__<alternativa>`), e não por
   posição, mais a contagem de perguntas por dimensão.
   Os multiplicadores do banco NÃO entram: o modelo reaprende seus próprios pesos.
-- `pontuacao_reconhecimento_padroes`. `veredito_usuario` NÃO entra (evita copiar o palpite).
+- `pontuacao_reconhecimento_padroes`. `feedback_cliente` NÃO entra: chega horas depois,
+  e o modelo não deve copiar o palpite do cliente.
 """
 import numpy as np
 import pandas as pd

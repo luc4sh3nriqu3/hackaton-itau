@@ -6,12 +6,12 @@ Docs:   http://localhost:8000/docs  (OpenAPI/Swagger)
 Autenticação: header `X-API-Key` com uma das chaves de TRIAGEM_API_KEYS.
 """
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from functools import lru_cache
 from typing import Literal
 
 import pandas as pd
-from fastapi import Depends, FastAPI, HTTPException, Security
+from fastapi import Depends, FastAPI, HTTPException, Query, Security
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import APIKeyHeader
 from pydantic import BaseModel, Field
@@ -34,9 +34,10 @@ app = FastAPI(
     version="1.0.0",
     description=(
         "Recebe uma transação Pix já sinalizada por um modelo de detecção, conduz o usuário por "
-        "3 perguntas educativas adaptativas, coleta o veredito dele e devolve um score refinado "
-        "com explicação personalizada. Se alguma resposta indicar coação física, o fluxo é "
-        "interrompido e substituído por orientação de segurança."
+        "3 perguntas educativas adaptativas e devolve um score refinado com uma explicação "
+        "personalizada que convida o cliente a repensar. Depois, se o cliente seguiu com a "
+        "transferência, coleta o feedback dele (era golpe ou não) para confirmar desfechos reais. "
+        "Se alguma resposta indicar coação física, o fluxo é interrompido e substituído por orientação de segurança."
     ),
 )
 app.add_middleware(
@@ -86,6 +87,10 @@ class SituacaoInicial(BaseModel):
     fator_risco_principal: FatorRisco
     fator_risco_secundario: FatorRisco | None = None
     score_inicial_modelo_base: float = Field(ge=0, le=1)
+    cliente_id: str | None = Field(None, max_length=100, description="Quem fez o Pix; usado para buscar feedbacks pendentes")
+    descricao_exibicao: str | None = Field(
+        None, max_length=200, description='Texto curto para o pop-up de feedback, ex.: "Pix de R$ 1.000,00 para Lucas"'
+    )
 
 
 class AlternativaPublica(BaseModel):
@@ -109,7 +114,7 @@ class Progresso(BaseModel):
 
 class RespostaEtapa(BaseModel):
     sessao_id: str
-    status: Literal["em_andamento", "aguardando_veredito", "coacao"]
+    status: Literal["em_andamento", "concluida", "coacao"]
     pergunta: PerguntaPublica | None = None
     progresso: Progresso
     orientacao_seguranca: str | None = None
@@ -120,10 +125,6 @@ class RespostaUsuario(BaseModel):
     alternativa_id: str
 
 
-class Veredito(BaseModel):
-    veredito_usuario: Literal["golpe", "nao_e_golpe", "nao_tenho_certeza"]
-
-
 class Resultado(BaseModel):
     sessao_id: str
     status: Literal["concluida", "coacao"]
@@ -131,7 +132,6 @@ class Resultado(BaseModel):
     score_inicial_modelo_base: float
     score_refinado: float | None = Field(None, description="Probabilidade de golpe, com piso 0,15 e teto 0,98")
     nivel_risco: Literal["baixo", "moderado", "alto"] | None = None
-    veredito_usuario: str | None = None
     pontuacao_reconhecimento_padroes: int | None = None
     explicacao_gerada: str
     fonte_explicacao: Literal["gemini", "template", "seguranca"]
@@ -139,7 +139,19 @@ class Resultado(BaseModel):
 
 
 class Decisao(BaseModel):
-    usuario_seguiu_recomendacao: bool
+    decisao: Literal["continuar", "cancelar"] = Field(description="O que o cliente fez depois do chat")
+
+
+class Feedback(BaseModel):
+    feedback_cliente: Literal["golpe", "nao_golpe", "sem_resposta"] = Field(
+        description='"golpe" (quer falar com o suporte), "nao_golpe" (era legítima) ou "sem_resposta" (fechou sem responder)'
+    )
+
+
+class FeedbackPendente(BaseModel):
+    sessao_id: str
+    descricao_exibicao: str | None
+    concluida_em: str
 
 
 # ---------- Auxiliares ----------
@@ -191,12 +203,40 @@ def _resultado(sessao: dict) -> Resultado:
         score_inicial_modelo_base=sessao["score_inicial_modelo_base"],
         score_refinado=sessao["score_refinado"],
         nivel_risco=sessao["nivel_risco"],
-        veredito_usuario=sessao["veredito_usuario"],
         pontuacao_reconhecimento_padroes=sessao["pontuacao_reconhecimento_padroes"],
         explicacao_gerada=sessao["explicacao_gerada"],
         fonte_explicacao=sessao["fonte_explicacao"],
         versao_modelo=sessao["versao_modelo"],
     )
+
+
+def _agora() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def _concluir(sessao_id: str, sessao: dict) -> None:
+    """Calcula score e explicação a partir das 3 respostas e encerra a sessão."""
+    qa = _perguntas_respostas(sessao)
+    sessao["pontuacao_reconhecimento_padroes"] = sum(q["protetora"] for q in qa)
+
+    modelo = carregar_modelo()
+    linha = pd.DataFrame([{c: sessao.get(c) for c in COLUNAS}])
+    prob, exibido = modelo.prever_sessoes(linha)
+    prob, score = float(prob[0]), round(float(exibido[0]), 4)
+    nivel = nivel_risco(prob, modelo.limiar)
+
+    texto, fonte = gemini.gerar_explicacao(sessao, qa, nivel)
+    armazenamento().atualizar(sessao_id, {
+        "status": "concluida",
+        "concluida_em": _agora().isoformat(),
+        "pontuacao_reconhecimento_padroes": sessao["pontuacao_reconhecimento_padroes"],
+        "score_refinado": score,
+        "prob_interna": prob,
+        "nivel_risco": nivel,
+        "explicacao_gerada": texto,
+        "fonte_explicacao": fonte,
+        "versao_modelo": modelo.versao,
+    })
 
 
 # ---------- Endpoints ----------
@@ -211,6 +251,7 @@ def criar_sessao(situacao: SituacaoInicial, _: str = Depends(autenticar)):
         media = dados["valor_medio_historico_usuario"]
         dados["desvio_valor_padrao"] = round((dados["valor_transacao"] - media) / media, 4)
     dados["sinalizador_coacao_fisica"] = False
+    dados["feedback_cliente"] = "sem_resposta"  # até o cliente responder o pop-up
 
     sessao_id = str(uuid.uuid4())
     campos, pergunta = _registrar_pergunta(dados, 1)
@@ -223,7 +264,10 @@ def criar_sessao(situacao: SituacaoInicial, _: str = Depends(autenticar)):
 
 @app.post("/v1/sessoes/{sessao_id}/respostas", response_model=RespostaEtapa, tags=["sessões"])
 def responder(sessao_id: str, resposta: RespostaUsuario, _: str = Depends(autenticar)):
-    """Registra a resposta da pergunta atual e devolve a próxima (ou pede o veredito após a última).
+    """Registra a resposta da pergunta atual e devolve a próxima.
+
+    Após a última pergunta, calcula o score e a explicação e devolve `status = "concluida"`;
+    o resultado sai em `GET /resultado`.
 
     Se a alternativa indicar coação física, o fluxo é encerrado com `status = "coacao"`
     e `orientacao_seguranca`.
@@ -243,7 +287,7 @@ def responder(sessao_id: str, resposta: RespostaUsuario, _: str = Depends(autent
     campos = {f"pergunta_{n}_resposta": alt.id, f"pergunta_{n}_multiplicador": alt.multiplicador}
 
     if alt.coacao:
-        texto, fonte = gemini.gerar_explicacao(sessao, [], None, None, None, coacao=True)
+        texto, fonte = gemini.gerar_explicacao(sessao, [], None, coacao=True)
         armazenamento().atualizar(sessao_id, {
             **campos, "status": "coacao", "sinalizador_coacao_fisica": True,
             "explicacao_gerada": texto, "fonte_explicacao": fonte,
@@ -253,48 +297,14 @@ def responder(sessao_id: str, resposta: RespostaUsuario, _: str = Depends(autent
         )
 
     if n == TOTAL_PERGUNTAS:
-        armazenamento().atualizar(sessao_id, {**campos, "status": "aguardando_veredito"})
-        return RespostaEtapa(sessao_id=sessao_id, status="aguardando_veredito", progresso=Progresso(atual=n))
+        armazenamento().atualizar(sessao_id, campos)
+        _concluir(sessao_id, {**sessao, **campos})
+        return RespostaEtapa(sessao_id=sessao_id, status="concluida", progresso=Progresso(atual=n))
 
     sessao.update(campos)
     proxima, pergunta = _registrar_pergunta(sessao, n + 1)
     armazenamento().atualizar(sessao_id, {**campos, **proxima})
     return RespostaEtapa(sessao_id=sessao_id, status="em_andamento", pergunta=pergunta, progresso=Progresso(atual=n + 1))
-
-
-@app.post("/v1/sessoes/{sessao_id}/veredito", response_model=Resultado, tags=["sessões"])
-def registrar_veredito(sessao_id: str, veredito: Veredito, _: str = Depends(autenticar)):
-    """Registra o veredito do usuário e calcula score refinado + explicação.
-
-    O veredito é logado para análise de concordância humano-modelo, mas não é feature do classificador.
-    """
-    sessao = _carregar(sessao_id)
-    if sessao["status"] != "aguardando_veredito":
-        raise HTTPException(409, f"Sessão não está aguardando veredito (status: {sessao['status']})")
-
-    qa = _perguntas_respostas(sessao)
-    sessao["pontuacao_reconhecimento_padroes"] = sum(q["protetora"] for q in qa)
-    sessao["veredito_usuario"] = veredito.veredito_usuario
-
-    modelo = carregar_modelo()
-    linha = pd.DataFrame([{c: sessao.get(c) for c in COLUNAS}])
-    prob, exibido = modelo.prever_sessoes(linha)
-    prob, score = float(prob[0]), round(float(exibido[0]), 4)
-    nivel = nivel_risco(prob, modelo.limiar)
-
-    texto, fonte = gemini.gerar_explicacao(sessao, qa, veredito.veredito_usuario, score, nivel)
-    armazenamento().atualizar(sessao_id, {
-        "status": "concluida",
-        "veredito_usuario": veredito.veredito_usuario,
-        "pontuacao_reconhecimento_padroes": sessao["pontuacao_reconhecimento_padroes"],
-        "score_refinado": score,
-        "prob_interna": prob,
-        "nivel_risco": nivel,
-        "explicacao_gerada": texto,
-        "fonte_explicacao": fonte,
-        "versao_modelo": modelo.versao,
-    })
-    return _resultado(_carregar(sessao_id))
 
 
 @app.get("/v1/sessoes/{sessao_id}/resultado", response_model=Resultado, tags=["sessões"])
@@ -306,11 +316,53 @@ def obter_resultado(sessao_id: str, _: str = Depends(autenticar)):
     return _resultado(sessao)
 
 
-@app.post("/v1/sessoes/{sessao_id}/decisao", status_code=204, tags=["feedback"])
+@app.post("/v1/sessoes/{sessao_id}/decisao", status_code=204, tags=["decisão e feedback"])
 def registrar_decisao(sessao_id: str, decisao: Decisao, _: str = Depends(autenticar)):
-    """(Opcional) Registra se o usuário seguiu a recomendação — feedback de produto."""
+    """Registra se o cliente continuou ou cancelou a transferência depois do chat.
+
+    Só sessões com `continuar` recebem depois o pop-up de feedback.
+    """
+    sessao = _carregar(sessao_id)
+    if sessao["status"] != "concluida":
+        raise HTTPException(409, f"Sessão não concluída (status: {sessao['status']})")
+    arriscado = sessao["nivel_risco"] in ("moderado", "alto")
+    armazenamento().atualizar(sessao_id, {
+        "decisao_cliente": decisao.decisao,
+        "usuario_seguiu_recomendacao": (decisao.decisao == "cancelar") == arriscado,
+    })
+
+
+@app.get("/v1/feedbacks/pendentes", response_model=list[FeedbackPendente], tags=["decisão e feedback"])
+def feedbacks_pendentes(cliente_id: str = Query(..., description="Mesmo cliente_id enviado ao criar a sessão"),
+                        _: str = Depends(autenticar)):
+    """Transações que o cliente continuou e sobre as quais ainda não mostramos o pop-up de feedback.
+
+    Só entram sessões concluídas há pelo menos `FEEDBACK_ATRASO_MINUTOS` (0 na demo). Mais antiga primeiro.
+    """
+    limite = _agora() - timedelta(minutes=float(obter("FEEDBACK_ATRASO_MINUTOS")))
+    return [
+        FeedbackPendente(sessao_id=s["sessao_id"], descricao_exibicao=s["descricao_exibicao"], concluida_em=s["concluida_em"])
+        for s in armazenamento().feedbacks_pendentes(cliente_id)
+        if datetime.fromisoformat(s["concluida_em"]) <= limite
+    ]
+
+
+@app.post("/v1/sessoes/{sessao_id}/feedback/exibido", status_code=204, tags=["decisão e feedback"])
+def marcar_feedback_exibido(sessao_id: str, _: str = Depends(autenticar)):
+    """Marca que o pop-up foi mostrado: a sessão sai de /pendentes e não é perguntada de novo."""
     _carregar(sessao_id)
-    armazenamento().atualizar(sessao_id, {"usuario_seguiu_recomendacao": decisao.usuario_seguiu_recomendacao})
+    armazenamento().atualizar(sessao_id, {"feedback_exibido_em": _agora().isoformat()})
+
+
+@app.post("/v1/sessoes/{sessao_id}/feedback", status_code=204, tags=["decisão e feedback"])
+def registrar_feedback(sessao_id: str, feedback: Feedback, _: str = Depends(autenticar)):
+    """Grava a resposta do cliente no pop-up. Fechar sem responder envia `sem_resposta`."""
+    sessao = _carregar(sessao_id)
+    armazenamento().atualizar(sessao_id, {
+        "feedback_cliente": feedback.feedback_cliente,
+        "feedback_respondido_em": _agora().isoformat(),
+        "feedback_exibido_em": sessao["feedback_exibido_em"] or _agora().isoformat(),
+    })
 
 
 @app.get("/saude", tags=["infra"])

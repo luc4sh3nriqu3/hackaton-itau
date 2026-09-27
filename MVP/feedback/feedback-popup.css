@@ -1,0 +1,41 @@
+/* Pop-up de feedback pós-transação — só estilo. Classes com prefixo fb- para não colidir com styles.css. */
+
+.fb-overlay {
+  position: absolute; inset: 0; z-index: 50;
+  display: flex; align-items: center; justify-content: center; padding: 24px;
+  background: rgba(20, 20, 20, 0.45);
+  opacity: 0; transition: opacity .2s ease;
+}
+.fb-overlay.fb-visivel { opacity: 1; }
+
+.fb-cartao {
+  position: relative; width: 100%; max-width: 330px;
+  background: #fff; border-radius: 20px; padding: 28px 22px 20px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18); text-align: center;
+  transform: translateY(8px) scale(.98); transition: transform .2s ease;
+}
+.fb-overlay.fb-visivel .fb-cartao { transform: none; }
+
+.fb-fechar {
+  position: absolute; top: 12px; right: 12px; width: 32px; height: 32px;
+  border: none; border-radius: 50%; background: var(--cinza-fundo, #f2f2f2);
+  font-size: 15px; color: #333; cursor: pointer;
+}
+
+.fb-icone {
+  width: 52px; height: 52px; margin: 0 auto 14px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: #fff3e7; color: var(--laranja, #ec7000);
+}
+
+.fb-titulo { margin: 0 0 8px; font-size: 18px; font-weight: 700; color: var(--texto, #1c1c1c); }
+.fb-texto { margin: 0 0 20px; font-size: 15px; line-height: 1.5; color: #444; }
+
+.fb-botao {
+  display: block; width: 100%; margin-top: 10px; padding: 13px 16px;
+  border-radius: 24px; border: 1px solid var(--laranja, #ec7000);
+  font-family: inherit; font-size: 15px; cursor: pointer;
+  background: #fff; color: var(--laranja, #ec7000);
+}
+.fb-botao.fb-principal { background: var(--laranja, #ec7000); color: #fff; }
+.fb-botao:active { opacity: .85; }

@@ -24,6 +24,7 @@ PADROES = {
     "TRIAGEM_API_KEYS": "demo-mvp-key",
     "TRIAGEM_DB": str(SERVICO_DIR / "triagem.db"),
     "TRIAGEM_CORS_ORIGINS": "*",
+    "FEEDBACK_ATRASO_MINUTOS": "0",
 }
 
 

@@ -46,12 +46,9 @@
   const valor = dados.valor ? "R$ " + formatarMoeda(dados.valor) : "esse valor";
   const bloco1 = dados.bloco1 || (dados.valor ? montarBloco1(dados) : null);
 
-  const VEREDITOS = [
-    { id: "golpe", texto: "Acho que é golpe" },
-    { id: "nao_e_golpe", texto: "Acho que não é golpe" },
-    { id: "nao_tenho_certeza", texto: "Não tenho certeza" },
-  ];
-  const TITULO_NIVEL = { alto: "Risco alto de golpe", moderado: "Risco moderado de golpe", baixo: "Risco baixo" };
+  // Fim do chat: convida a repensar, sem números nem alarme. Risco baixo tem um título tranquilizador.
+  const TITULO_REPENSAR = "Você não gostaria de repensar sobre essa transação por alguns minutos?";
+  const TITULO_BAIXO = "Não encontramos sinais fortes de golpe";
 
   const chat = document.getElementById("chat");
   const opcoes = document.getElementById("opcoes");
@@ -152,7 +149,7 @@
   async function iniciar() {
     if (!bloco1) return irPara("destinatario.html");
     try {
-      const etapa = await comDigitando(iniciarSessao(bloco1));
+      const etapa = await comDigitando(iniciarSessao(bloco1, dados));
       sessaoId = etapa.sessao_id;
       salvarTransferencia({ sessaoTriagem: sessaoId });
       mostrarPergunta(etapa);
@@ -166,53 +163,39 @@
     try {
       const etapa = await comDigitando(enviarResposta(sessaoId, pergunta.id, alternativa.id), 500);
       if (etapa.status === "coacao") return mostrarCoacao(etapa.orientacao_seguranca);
-      if (etapa.status === "aguardando_veredito") return perguntarVeredito();
+      if (etapa.status === "concluida") return mostrarResultado(await comDigitando(buscarResultado(sessaoId), 300));
       mostrarPergunta(etapa);
     } catch (erro) {
       falha(erro, () => mostrarOpcoes(pergunta.alternativas, (alt) => responder(pergunta, alt)));
     }
   }
 
-  function perguntarVeredito() {
-    balaoBot(
-      "Agora é com você",
-      `<p>Depois de tudo isso, o que você acha: esse Pix de ${esc(valor)} para ${esc(nome)} é golpe?</p>`
-    );
-    mostrarOpcoes(VEREDITOS, async (v) => {
-      balaoUsuario(v.texto);
-      try {
-        await comDigitando(enviarVeredito(sessaoId, v.id), 300);
-        const resultado = await comDigitando(buscarResultado(sessaoId), 600);
-        mostrarResultado(resultado);
-      } catch (erro) {
-        falha(erro, perguntarVeredito);
-      }
-    });
-  }
-
   function mostrarResultado(r) {
-    const pct = Math.round(r.score_refinado * 100);
-    const paragrafos = r.explicacao_gerada.split(/\n+/).filter(Boolean).map((t) => `<p>${esc(t)}</p>`).join("");
-    balaoBot(
-      `${TITULO_NIVEL[r.nivel_risco]} · ${pct}%`,
-      `<div class="medidor"><span class="${r.nivel_risco}" style="width:${pct}%"></span></div>${paragrafos}`
-    );
-    salvarTransferencia({ triagem: { valor: dados.valor, chavePix: dados.chavePix, nivel: r.nivel_risco } });
     const arriscado = r.nivel_risco !== "baixo";
+    const paragrafos = r.explicacao_gerada.split(/\n+/).filter(Boolean).map((t) => `<p>${esc(t)}</p>`).join("");
+    balaoBot(arriscado ? TITULO_REPENSAR : TITULO_BAIXO, paragrafos);
+    salvarTransferencia({ triagem: { valor: dados.valor, chavePix: dados.chavePix, nivel: r.nivel_risco } });
 
-    // Decisão de produto: nunca bloquear. O usuário escolhe; registramos se seguiu a recomendação.
+    // Decisão de produto: nunca bloquear. O cliente escolhe; só "continuar" gera o pop-up de feedback depois.
     mostrarOpcoes(
       [
-        { texto: "Cancelar transferência", destaque: arriscado, acao: () => sair(arriscado, () => { limparTransferencia(); irPara("pix.html"); }) },
-        { texto: "Revisar dados da transferência", acao: () => irPara("confirmacao.html") },
-        { texto: "Concluir mesmo assim", destaque: !arriscado, acao: () => sair(!arriscado, () => irPara("comprovante.html")) },
+        {
+          texto: "Cancelar transação",
+          destaque: arriscado,
+          acao: () => decidir("cancelar", () => { limparTransferencia(); irPara("pix.html"); }),
+        },
+        {
+          texto: arriscado ? "Continuar para transação mesmo assim" : "Continuar para transação",
+          destaque: !arriscado,
+          acao: () => decidir("continuar", () => irPara("comprovante.html")),
+        },
       ],
       (item) => item.acao()
     );
   }
 
-  async function sair(seguiuRecomendacao, destino) {
-    await registrarDecisao(sessaoId, seguiuRecomendacao);
+  async function decidir(decisao, destino) {
+    await registrarDecisao(sessaoId, decisao);
     destino();
   }
 

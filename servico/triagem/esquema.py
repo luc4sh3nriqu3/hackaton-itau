@@ -33,7 +33,7 @@ BLOCO2 = [
 ] + ["sinalizador_coacao_fisica"]
 
 BLOCO3 = [
-    "veredito_usuario",
+    "feedback_cliente",  # resposta do pop-up pós-transação: golpe | nao_golpe | sem_resposta
     "pontuacao_reconhecimento_padroes",
     "score_refinado",
     "rotulo_real_golpe",
@@ -47,7 +47,7 @@ assert len(COLUNAS) == 18 + 4 * TOTAL_PERGUNTAS + 1 + 7, len(COLUNAS)
 
 TIPOS_CHAVE = ["cpf", "email", "telefone", "aleatoria"]
 CANAIS = ["app", "internet_banking"]
-VEREDITOS = ["golpe", "nao_e_golpe", "nao_tenho_certeza"]
+FEEDBACKS = ["golpe", "nao_golpe", "sem_resposta"]
 TIPOS_GOLPE = [
     "falsa_central",
     "mao_fantasma",

@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>itaú · Meu Itaú</title>
 <link rel="stylesheet" href="styles.css" />
+<link rel="stylesheet" href="feedback/feedback-popup.css" />
 </head>
 <body>
 <div class="phone">
@@ -97,6 +98,9 @@
 </div>
 
 <script src="app.js"></script>
+<script src="triagem.js"></script>
+<script src="feedback/feedback-popup.js"></script>
+<script src="feedback/feedback.js"></script>
 <script>
   let visivel = true;
   document.getElementById("alternar-saldo").addEventListener("click", () => {
@@ -105,6 +109,9 @@
       el.textContent = visivel ? el.dataset.valor : "•••••";
     });
   });
+
+  // Pop-up de feedback de um Pix que o cliente decidiu continuar depois da avaliação (se houver).
+  setTimeout(verificarFeedbackPendente, 700);
 </script>
 </body>
 </html>

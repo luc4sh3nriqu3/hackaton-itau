@@ -14,7 +14,7 @@ Processo gerador ("verdade" que o classificador vai aprender a aproximar):
    condicionadas à situação latente e à consciência de risco do usuário.
 4. Rótulo: logit(p) = A·logit(score_base) + B·Σ log(multiplicador) + ruído + C → Bernoulli.
    Os multiplicadores do banco só entram aqui, nunca no classificador de produção.
-5. Veredito do usuário: mais acurado quanto maior a consciência de risco (que também
+5. Feedback do cliente (pop-up pós-transação): mais acurado quanto maior a consciência de risco (que também
    gera as respostas "protetoras" → pontuacao_reconhecimento_padroes).
 """
 import argparse
@@ -201,15 +201,17 @@ def gerar_sessao(rng, seletor, inicio) -> dict:
         rotulo = bool(rng.random() < _sigmoid(z + rng.normal(0, RUIDO)))
     tipo_rotulo = (tipo or "outro") if rotulo else None
 
-    p_incerto = 0.08 + 0.35 * (1 - consciencia)
-    if rng.random() < p_incerto:
-        veredito = "nao_tenho_certeza"
+    # Feedback do pop-up pós-transação: quem tem menos consciência de risco responde menos,
+    # e quem responde acerta mais quanto maior a consciência.
+    p_sem_resposta = 0.08 + 0.35 * (1 - consciencia)
+    if rng.random() < p_sem_resposta:
+        feedback = "sem_resposta"
     else:
         acerta = rng.random() < 0.5 + 0.45 * consciencia
-        veredito = "golpe" if rotulo == acerta else "nao_e_golpe"
+        feedback = "golpe" if rotulo == acerta else "nao_golpe"
 
     linha.update({
-        "veredito_usuario": veredito,
+        "feedback_cliente": feedback,
         "pontuacao_reconhecimento_padroes": int(protetoras),
         "score_refinado": None,  # preenchido por treino.py (predição out-of-fold)
         "rotulo_real_golpe": rotulo,

@@ -1,5 +1,5 @@
 {
-  "versao_modelo": "20260927000114",
+  "versao_modelo": "20260927115952",
   "versao_banco_perguntas": "1.0.0",
   "modelo_escolhido": "regressao_logistica",
   "comparacao_modelos": {
@@ -74,18 +74,18 @@
   "teste_score_base_sozinho": {
     "auc_roc": 0.7969
   },
-  "concordancia_humano_modelo_teste": {
+  "concordancia_feedback_cliente_modelo_teste": {
     "golpe": {
       "n": 378,
       "modelo_diz_golpe": 0.638,
       "golpe_real": 0.563
     },
-    "nao_e_golpe": {
+    "nao_golpe": {
       "n": 513,
       "modelo_diz_golpe": 0.429,
       "golpe_real": 0.144
     },
-    "nao_tenho_certeza": {
+    "sem_resposta": {
       "n": 307,
       "modelo_diz_golpe": 0.466,
       "golpe_real": 0.339
