@@ -210,10 +210,10 @@ A matriz soma 1198 e não 12.000 porque só usa o teste: avaliar com sessões qu
 - **Acurácia balanceada (76,9%)**: média entre recall e especificidade. Diferente da acurácia comum, não é inflada pela classe majoritária.
 - **AUC-ROC (0,856)**: não depende de limiar. É a chance de um golpe sorteado receber um score maior que uma transação legítima sorteada. 0,5 é chute; 1,0 é perfeito. O score inicial sozinho dá 0,797: **as 3 perguntas melhoram a separação**.
 - **AUC-PR (0,750)**: resume a curva precisão × recall. A referência de um chute é a proporção de golpes (0,326); quanto mais acima, melhor.
-- **Brier score (0,137)**: erro médio da probabilidade (0 é perfeito). Um modelo que sempre dissesse "32,6% de chance" teria 0,220. Importa porque o app mostra a probabilidade ao cliente.
-- **Calibração**: se o modelo diz 70%, cerca de 70% desses casos deveriam ser golpe. No gráfico, quanto mais perto da diagonal, mais confiável é o número exibido.
+- **Brier score (0,137)**: erro médio da probabilidade (0 é perfeito). Um modelo que sempre dissesse "32,6% de chance" teria 0,220. Importa porque a probabilidade é guardada na base e devolvida pela API (`score_refinado`); o MVP não a mostra ao cliente, mas outro sistema pode usá-la.
+- **Calibração**: se o modelo diz 70%, cerca de 70% desses casos deveriam ser golpe. No gráfico, quanto mais perto da diagonal, mais confiável é a probabilidade devolvida pela API.
 
-**Por que o limiar é 16,6% e não 50%?** O limiar é a probabilidade a partir da qual a transação vira alerta. Ele foi escolhido no conjunto de validação como o maior que ainda detecta pelo menos 90% dos golpes; no teste, com dados que o modelo nunca viu, o recall ficou em 86,7%, uma variação normal entre amostras. Abaixá-lo aumenta o recall e derruba a precisão; subi-lo faz o contrário (veja o gráfico do limiar e a coluna "Limiar 50%" da tabela). Como a transferência nunca é bloqueada, só avisada, um falso alarme custa pouco e um golpe não detectado custa muito, então o limiar favorece o recall.
+**Por que o limiar é 16,6% e não 50%?** O limiar é a probabilidade a partir da qual a transação vira alerta: acima dele, o chat mostra a mensagem "Você não gostaria de repensar sobre essa transação por alguns minutos?"; abaixo, "Não encontramos sinais fortes de golpe". Ele foi escolhido no conjunto de validação como o maior que ainda detecta pelo menos 90% dos golpes; no teste, com dados que o modelo nunca viu, o recall ficou em 86,7%, uma variação normal entre amostras. Abaixá-lo aumenta o recall e derruba a precisão; subi-lo faz o contrário (veja o gráfico do limiar e a coluna "Limiar 50%" da tabela). Como a transferência nunca é bloqueada, só há um convite a repensar, um falso alarme custa pouco e um golpe não detectado custa muito, então o limiar favorece o recall.
 <!-- METRICAS:FIM -->
 
 ## Decisões de modelagem
@@ -239,7 +239,7 @@ A matriz soma 1198 e não 12.000 porque só usa o teste: avaliar com sessões qu
   - Não usa os multiplicadores nem `feedback_cliente`. As sessões com coação ficam fora do treino.
   - Comparei regressão logística e LightGBM, e a logística venceu na validação (o gerador é linear no logit). A calibração é de Platt.
   - O limiar é o maior que mantém recall ≥ 90% na validação.
-  - A decisão usa a probabilidade sem corte. O score exibido tem piso 0,15 e teto 0,98.
+  - A decisão usa a probabilidade sem corte. O `score_refinado` devolvido pela API tem piso 0,15 e teto 0,98, para nenhum sistema que o exiba comunicar certeza absoluta. O MVP não mostra o número ao cliente.
 - **Métricas:** veja a seção [Métricas do modelo](#métricas-do-modelo), gerada pelo script `triagem/relatorio.py`.
 - **Coação física:** a sessão é interrompida na hora e a API devolve uma orientação de segurança **fixa e revisada** (190, MED, banco), sem passar pelo Gemini. Numa situação de risco físico, esse texto não deve depender de rede nem da variação de um modelo generativo.
 - **Log para retreino:** o SQLite (`servico/triagem.db`) guarda uma linha por sessão com as colunas do esquema, mais o status, as versões de modelo e de banco, a probabilidade interna, a decisão do cliente (`decisao_cliente`) e os horários do pop-up (`feedback_exibido_em`, `feedback_respondido_em`). O `feedback_cliente` é o primeiro indício do desfecho real. Quando o desfecho for confirmado (feedback mais confirmação do banco), basta preencher `rotulo_real_golpe` e `rotulo_tipo_golpe`, e as linhas passam a servir de dado real no mesmo formato do sintético. O retreino automático fica fora do escopo desta versão.
@@ -249,6 +249,7 @@ A matriz soma 1198 e não 12.000 porque só usa o teste: avaliar com sessões qu
 ## Placeholders e limitações
 
 - **Score inicial mockado:** `montarBloco1` em `MVP/triagem.js` simula o modelo antifraude de origem a partir do valor, de o destinatário ser novo e do horário. Para usar o modelo real, basta trocar o corpo dessa função mantendo o formato do objeto retornado.
+- **Cliente fixo:** o MVP não tem login real, então todas as sessões usam `CLIENTE_ID = "cliente-demo-felipe"` (em `MVP/triagem.js`). Em produção, esse id viria do login, para cada cliente ver só os pop-ups das transações dele.
 - **Chave da API no navegador:** a chave fica visível em `MVP/triagem.js`. Serve para o protótipo, mas em produção a chamada passaria por um backend.
 - **Dados sintéticos:** o dataset é inteiramente sintético (não existe base pública caso a caso de Pix). As métricas medem o quanto o modelo recupera o processo gerador, não o desempenho no mundo real.
 - **Fontes usadas para o realismo:** Pizzolato et al., *A Taxonomy of Pix Fraud in Brazil* (arXiv:2511.20902), e o Observatório Lupa, *A Jornada dos Golpes*.
