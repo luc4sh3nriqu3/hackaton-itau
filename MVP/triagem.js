@@ -8,7 +8,7 @@ const TRIAGEM_API_KEY = "demo-mvp-key"; // protótipo: em produção a chave fic
 const LIMIAR_ALERTA = 0.65;
 
 // Identifica o cliente logado (no protótipo, fixo). Usado para buscar os feedbacks pendentes dele.
-const CLIENTE_ID = "cliente-demo-felipe";
+const CLIENTE_ID = "cliente-demo-jose";
 
 // Texto curto que o pop-up de feedback mostra depois, ex.: "Pix de R$ 1.000,00 para Lucas".
 function descreverPix(dados) {
@@ -112,7 +112,12 @@ async function chamarTriagem(metodo, caminho, corpo) {
 
 // Chat (3 perguntas → resultado)
 const iniciarSessao = (bloco1, dados) =>
-  chamarTriagem("POST", "/v1/sessoes", { ...bloco1, cliente_id: CLIENTE_ID, descricao_exibicao: descreverPix(dados) });
+  chamarTriagem("POST", "/v1/sessoes", {
+    ...bloco1,
+    cliente_id: CLIENTE_ID,
+    nome_destinatario: dados.nome,
+    descricao_exibicao: descreverPix(dados),
+  });
 const enviarResposta = (id, perguntaId, alternativaId) =>
   chamarTriagem("POST", `/v1/sessoes/${id}/respostas`, { pergunta_id: perguntaId, alternativa_id: alternativaId });
 const buscarResultado = (id) => chamarTriagem("GET", `/v1/sessoes/${id}/resultado`);

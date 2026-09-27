@@ -19,6 +19,7 @@ METADADOS = [
     "versao_banco_perguntas", "prob_interna", "nivel_risco", "fonte_explicacao",
     "cliente_id", "descricao_exibicao", "decisao_cliente", "concluida_em",
     "feedback_exibido_em", "feedback_respondido_em",
+    "modo", "nome_destinatario", "explicacao_topicos",
 ]
 
 

@@ -25,6 +25,7 @@ PADROES = {
     "TRIAGEM_DB": str(SERVICO_DIR / "triagem.db"),
     "TRIAGEM_CORS_ORIGINS": "*",
     "FEEDBACK_ATRASO_MINUTOS": "0",
+    "TRIAGEM_MODO_DEMO": "0",
 }
 
 
@@ -34,6 +35,11 @@ def obter(nome: str, padrao: str | None = None) -> str | None:
     if valor:
         return valor.strip()
     return padrao if padrao is not None else PADROES.get(nome)
+
+
+def modo_demo() -> bool:
+    """Perguntas e texto final mockados para apresentações (ver triagem/demo.py)."""
+    return (obter("TRIAGEM_MODO_DEMO") or "0").lower() in ("1", "true", "sim", "on")
 
 
 def chaves_api() -> set[str]:

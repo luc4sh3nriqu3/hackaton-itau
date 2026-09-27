@@ -32,13 +32,40 @@ cd MVP && python3 -m http.server 5500
 cd servico && ../.venv/bin/python -m pytest -q tests
 ```
 
-Roteiro da demo: Pix → digite uma chave nova (por exemplo `golpista@mail.com`) → valor de R$ 1.000,00 → Transferir → "Iniciar avaliação" → responda as 3 perguntas → "Continuar para transação mesmo assim" → comprovante → "Voltar ao início": o pop-up de feedback aparece na home. O tempo até o pop-up aparecer é `FEEDBACK_ATRASO_MINUTOS` no `servico/.env` (0 na demo).
+Roteiro do fluxo real: Pix → digite uma chave nova (por exemplo `golpista@mail.com`) → valor de R$ 1.000,00 → Transferir → página de alerta → "Iniciar avaliação" → responda as 3 perguntas → "Continuar transferência mesmo assim" → senha → comprovante → "Voltar ao início": o pop-up de feedback aparece na home. O tempo até o pop-up aparecer é `FEEDBACK_ATRASO_MINUTOS` no `servico/.env` (0 na demo). Para o roteiro da apresentação, veja [Modo demo](#modo-demo-apresentações).
 
 ### Onde colocar a chave do Gemini
 
 Coloque a chave em **`servico/.env`**, na linha `GEMINI_API_KEY=` (a chave é gerada em https://aistudio.google.com/apikey).
 
 O `.env` é relido a cada requisição, então a próxima avaliação já usa o Gemini sem reiniciar nada. Enquanto não houver chave, ou se o Gemini falhar ou demorar, a explicação sai de um template local, também personalizado com as respostas do usuário. O campo `fonte_explicacao` do resultado indica qual dos dois foi usado, e `GET /saude` mostra se a chave foi detectada. O `.env` está no `.gitignore`.
+
+### Modo demo (apresentações)
+
+Para apresentar, o chat pode usar sempre as **mesmas 3 perguntas** e um **texto final pronto**, sem sortear perguntas, sem o classificador e sem depender do Gemini.
+
+**Como ativar:** no arquivo `servico/.env`, coloque
+
+```
+TRIAGEM_MODO_DEMO=1
+```
+
+Vale a partir da próxima avaliação, sem reiniciar a API. Para voltar ao fluxo real, use `TRIAGEM_MODO_DEMO=0` (ou apague a linha). Para conferir o modo ativo, abra `http://localhost:8000/saude` e veja `"modo_demo": true`.
+
+**O que muda no modo demo:**
+- As perguntas vêm de `servico/dados/perguntas_demo.json`, sempre nesta ordem, cada uma com uma dica curta:
+  1. Falaram que esta transferência precisa ser feita com urgência? (Sim / Não)
+  2. É para esta pessoa que você quer enviar o dinheiro? **nome do recebedor** (Sim / Não)
+  3. Qual é o motivo da sua transferência? (Um parente ou conhecido está pedindo / Recebi uma mensagem para quitar dívidas / Recebi uma ligação fazendo cobranças)
+- O texto final é uma lista curta de tópicos montada a partir das respostas. Cada alternativa tem um tópico pronto, com destaques em vermelho (alerta), laranja (ação) ou verde (bom sinal). Para mudar os textos, edite o JSON.
+- Qualquer resposta de risco leva à mensagem de "repensar". Como todo motivo da pergunta 3 é um padrão de golpe, uma sessão completa sempre termina em "repensar".
+- Decisão, pop-up de feedback e registro na base funcionam normalmente. As sessões ficam marcadas com `modo = demo` e `versao_modelo = demo`, para não se misturarem com dados reais.
+
+**Roteiro da persona:** José Pereira, aposentado de 66 anos, recebe pelo WhatsApp uma mensagem de uma loja conhecida pedindo um Pix de R$ 2.500 para "quitar dívidas".
+1. Pix → digite uma chave nova (ex.: `loja.whats@email.com`) → valor de R$ 2.500,00 → Transferir. Aparece o alerta.
+2. Toque em "Iniciar avaliação" e responda: **Sim** (urgência) → **Sim** (é para essa pessoa) → **Recebi uma mensagem para quitar dívidas**.
+3. O chat mostra "Você não gostaria de repensar sobre essa transação por alguns minutos?" com os tópicos.
+4. "Continuar transferência mesmo assim" → senha → comprovante → "Voltar ao início": aparece o pop-up de feedback.
 
 ## Etapa 0 — o que tinha no MVP
 
@@ -87,7 +114,7 @@ MVP/
 | `POST /v1/sessoes/{id}/feedback` | Recebe `{feedback_cliente: "golpe" \| "nao_golpe" \| "sem_resposta"}` |
 | `GET /saude` | Versões e se o Gemini está configurado |
 
-O `POST /v1/sessoes` também aceita `cliente_id` e `descricao_exibicao` (opcionais), usados só pelo pop-up de feedback. As perguntas chegam ao cliente sem multiplicadores nem flags internas. O MVP consome exatamente essa API pública, sem atalho interno.
+O `POST /v1/sessoes` também aceita `cliente_id` e `descricao_exibicao` (opcionais, usados pelo pop-up de feedback) e `nome_destinatario` (opcional, usado na pergunta de conferência do modo demo). No modo demo, o resultado traz `explicacao_topicos` (lista de `{tom, texto}`, com `**trechos**` a destacar); no modo real esse campo vem `null` e o texto está em `explicacao_gerada`. As perguntas chegam ao cliente sem multiplicadores nem flags internas. O MVP consome exatamente essa API pública, sem atalho interno.
 
 ## Base de dados (variáveis analisadas)
 
@@ -249,7 +276,7 @@ A matriz soma 1198 e não 12.000 porque só usa o teste: avaliar com sessões qu
 ## Placeholders e limitações
 
 - **Score inicial mockado:** `montarBloco1` em `MVP/triagem.js` simula o modelo antifraude de origem a partir do valor, de o destinatário ser novo e do horário. Para usar o modelo real, basta trocar o corpo dessa função mantendo o formato do objeto retornado.
-- **Cliente fixo:** o MVP não tem login real, então todas as sessões usam `CLIENTE_ID = "cliente-demo-felipe"` (em `MVP/triagem.js`). Em produção, esse id viria do login, para cada cliente ver só os pop-ups das transações dele.
+- **Cliente fixo:** o MVP não tem login real, então todas as sessões usam `CLIENTE_ID = "cliente-demo-jose"` (em `MVP/triagem.js`). Em produção, esse id viria do login, para cada cliente ver só os pop-ups das transações dele.
 - **Chave da API no navegador:** a chave fica visível em `MVP/triagem.js`. Serve para o protótipo, mas em produção a chamada passaria por um backend.
 - **Dados sintéticos:** o dataset é inteiramente sintético (não existe base pública caso a caso de Pix). As métricas medem o quanto o modelo recupera o processo gerador, não o desempenho no mundo real.
 - **Fontes usadas para o realismo:** Pizzolato et al., *A Taxonomy of Pix Fraud in Brazil* (arXiv:2511.20902), e o Observatório Lupa, *A Jornada dos Golpes*.

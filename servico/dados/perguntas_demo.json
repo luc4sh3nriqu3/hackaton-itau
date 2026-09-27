@@ -1,0 +1,51 @@
+{
+  "versao": "demo-1.0.0",
+  "descricao": "Perguntas fixas do modo demo (TRIAGEM_MODO_DEMO=1), na ordem em que aparecem. Cada alternativa diz se indica risco e qual tópico gera no texto final. Tons dos tópicos: alerta (vermelho), atencao (laranja), ok (verde). Trechos entre **asteriscos** são destacados na cor do tom. {nome_destinatario} é trocado pelo nome de quem recebe o Pix.",
+  "perguntas": [
+    {
+      "id": "DEMO_urgencia",
+      "dimensao": "P4",
+      "faceta": "urgência",
+      "texto_didatico": "Golpistas usam a pressa para você não ter tempo de pensar.",
+      "pergunta": "Falaram que esta transferência precisa ser feita com urgência?",
+      "alternativas": [
+        {"id": "sim", "texto": "Sim", "risco": true,
+         "topico": {"tom": "alerta", "texto": "**Pressa** é o truque mais usado: quem aplica golpe não quer que você pare para pensar."}},
+        {"id": "nao", "texto": "Não", "risco": false,
+         "topico": {"tom": "ok", "texto": "Ninguém está te apressando. **Bom sinal.**"}}
+      ]
+    },
+    {
+      "id": "DEMO_destinatario",
+      "dimensao": "P3",
+      "faceta": "identidade de quem recebe",
+      "texto_didatico": "Nem sempre quem recebe o Pix é quem pediu o dinheiro. Confira o nome.",
+      "pergunta": "É para esta pessoa que você quer enviar o dinheiro? **{nome_destinatario}**",
+      "alternativas": [
+        {"id": "sim", "texto": "Sim", "risco": false,
+         "topico": {"tom": "ok", "texto": "Você conferiu o nome de quem vai receber. **Ótimo cuidado.**"}},
+        {"id": "nao", "texto": "Não", "risco": true,
+         "topico": {"tom": "alerta", "texto": "**O nome não bate** com quem pediu o dinheiro. Esse é um **sinal forte de golpe**."}}
+      ]
+    },
+    {
+      "id": "DEMO_motivo",
+      "dimensao": "P2",
+      "faceta": "motivo da transferência",
+      "texto_didatico": "Saber o motivo ajuda a reconhecer os golpes mais comuns.",
+      "pergunta": "Qual é o motivo da sua transferência?",
+      "alternativas": [
+        {"id": "parente", "texto": "Um parente ou conhecido está pedindo", "risco": true,
+         "topico": {"tom": "alerta", "texto": "Pedido de dinheiro de **parente ou conhecido** por mensagem? **Ligue para o número antigo** da pessoa antes."}},
+        {"id": "quitar_dividas", "texto": "Recebi uma mensagem para quitar dívidas", "risco": true,
+         "topico": {"tom": "alerta", "texto": "**Cobrança de dívida por mensagem** é um golpe comum. Empresas sérias mandam **boleto pelo canal oficial**."}},
+        {"id": "ligacao_cobranca", "texto": "Recebi uma ligação fazendo cobranças", "risco": true,
+         "topico": {"tom": "alerta", "texto": "**Cobrança por ligação pedindo Pix** é um golpe comum. Confirme no **canal oficial** da empresa."}}
+      ]
+    }
+  ],
+  "topico_final": {
+    "alto": {"tom": "atencao", "texto": "**Pare alguns minutos** e confirme pelo **canal oficial**: um site ou telefone que você mesmo procurar. A decisão é sua."},
+    "baixo": {"tom": "atencao", "texto": "Antes de confirmar, **confira com calma** o nome e a chave Pix."}
+  }
+}

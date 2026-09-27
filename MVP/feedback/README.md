@@ -2,6 +2,8 @@
 
 Quando o cliente passa pela avaliação da espera.ai e decide **continuar** com o Pix, na próxima vez que ele abrir o app aparece um pop-up perguntando se aquela transação era golpe. A resposta vai para a base (coluna `feedback_cliente`) e serve para confirmar desfechos reais no retreino do modelo.
 
+> **Versão atual (demo):** o pop-up aparece depois de **qualquer transferência realizada**, com ou sem avaliação. O `comprovante.html` chama `registrarTransferenciaRealizada(dados)`, que guarda a pendência no `localStorage`, e a home mostra o pop-up uma única vez. Transferência cancelada não gera pop-up. Se a transferência passou pela avaliação, a resposta também vai para `POST /v1/sessoes/{id}/feedback`. As rotas de pendências abaixo continuam na API para a versão de produção.
+
 Esta pasta separa a **interface** da **integração com a API**. Para mudar o visual ou criar uma tela nova, basta mexer nos dois primeiros arquivos.
 
 | Arquivo | Responsabilidade | Chama a API? |
@@ -44,7 +46,7 @@ Só sessões com `"continuar"` geram pop-up. Para aparecer no pop-up, a sessão 
 
 **2. Ao abrir o app, buscar pendências:**
 ```http
-GET /v1/feedbacks/pendentes?cliente_id=cliente-demo-felipe
+GET /v1/feedbacks/pendentes?cliente_id=cliente-demo-jose
 → 200 [
     { "sessao_id": "…", "descricao_exibicao": "Pix de R$ 1.000,00 para Lucas", "concluida_em": "2026-09-27T14:02:11+00:00" }
   ]

@@ -517,3 +517,16 @@ h1 {
 .msg-bot p + p { margin-top: 8px; }
 .msg-bot.seguranca > strong { color: #d62222; }
 a.chip { text-decoration: none; display: block; }
+
+/* ---------- texto final em tópicos (modo demo) ---------- */
+.topicos { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.topico { display: flex; align-items: flex-start; gap: 10px; font-size: 15px; line-height: 1.5; color: #444; }
+.topico .marcador { flex: 0 0 auto; width: 10px; height: 10px; border-radius: 50%; margin-top: 7px; }
+.topico.alerta .marcador { background: #d62222; }
+.topico.alerta strong { color: #c01f1f; }
+.topico.atencao .marcador { background: var(--laranja); }
+.topico.atencao strong { color: #b35300; } /* laranja escurecido: contraste ~4,9:1 em texto */
+.topico.ok .marcador { background: #2e9e5b; }
+.topico.ok strong { color: #23804a; }
+/* nome do recebedor na pergunta de conferência: linha própria, em destaque */
+.msg-bot .pergunta strong { display: block; margin-top: 6px; font-size: 17px; color: #b35300; }

@@ -64,6 +64,19 @@
     return div.innerHTML;
   }
 
+  // Escapa o texto e transforma **trecho** em destaque. Nunca aceita HTML vindo da API.
+  function destacar(texto) {
+    return esc(texto).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+  }
+
+  // Texto final em tópicos (modo demo): marcador e destaques na cor do tom (alerta, atencao, ok).
+  function listaTopicos(topicos) {
+    const itens = topicos
+      .map((t) => `<li class="topico ${esc(t.tom)}"><span class="marcador" aria-hidden="true"></span><span>${destacar(t.texto)}</span></li>`)
+      .join("");
+    return `<ul class="topicos">${itens}</ul>`;
+  }
+
   function rolar() {
     requestAnimationFrame(() => (chat.scrollTop = chat.scrollHeight));
   }
@@ -141,7 +154,7 @@
       "",
       `<span class="progresso">Pergunta ${etapa.progresso.atual} de ${etapa.progresso.total}</span>
        <p class="didatica">${esc(q.texto_didatico)}</p>
-       <p class="pergunta">${esc(q.pergunta)}</p>`
+       <p class="pergunta">${destacar(q.pergunta)}</p>`
     );
     mostrarOpcoes(q.alternativas, (alt) => responder(q, alt));
   }
@@ -172,8 +185,10 @@
 
   function mostrarResultado(r) {
     const arriscado = r.nivel_risco !== "baixo";
-    const paragrafos = r.explicacao_gerada.split(/\n+/).filter(Boolean).map((t) => `<p>${esc(t)}</p>`).join("");
-    balaoBot(arriscado ? TITULO_REPENSAR : TITULO_BAIXO, paragrafos);
+    const corpo = r.explicacao_topicos
+      ? listaTopicos(r.explicacao_topicos)
+      : r.explicacao_gerada.split(/\n+/).filter(Boolean).map((t) => `<p>${esc(t)}</p>`).join("");
+    balaoBot(arriscado ? TITULO_REPENSAR : TITULO_BAIXO, corpo);
     salvarTransferencia({ triagem: { valor: dados.valor, chavePix: dados.chavePix, nivel: r.nivel_risco } });
 
     // Decisão de produto: nunca bloquear. O cliente escolhe; só "continuar" gera o pop-up de feedback depois.
@@ -225,7 +240,7 @@
 
   balaoBot(
     "",
-    `<p>Oi, Felipe! Sou a <strong>espera.ai</strong> e vou te ajudar a checar se esse Pix de ${esc(valor)} para ${esc(nome)} é seguro. ` +
+    `<p>Oi, José! Sou a <strong>espera.ai</strong> e vou te ajudar a checar se esse Pix de ${esc(valor)} para ${esc(nome)} é seguro. ` +
       `São 3 perguntas rápidas — e em cada uma eu te conto um truque que golpistas costumam usar.</p>`
   );
   setTimeout(iniciar, 600);

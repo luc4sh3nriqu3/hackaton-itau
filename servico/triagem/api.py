@@ -5,6 +5,7 @@ Docs:   http://localhost:8000/docs  (OpenAPI/Swagger)
 
 Autenticação: header `X-API-Key` com uma das chaves de TRIAGEM_API_KEYS.
 """
+import json
 import uuid
 from datetime import datetime, timedelta, timezone
 from functools import lru_cache
@@ -16,11 +17,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import APIKeyHeader
 from pydantic import BaseModel, Field
 
-from . import gemini
+from . import demo, gemini
 from .armazenamento import Armazenamento
 from .banco_perguntas import carregar_banco
 from .classificador import carregar_modelo, nivel_risco
-from .config import chaves_api, obter
+from .config import chaves_api, modo_demo, obter
 from .esquema import COLUNAS
 from .seletor import TOTAL_PERGUNTAS, SeletorPonderado
 
@@ -88,6 +89,9 @@ class SituacaoInicial(BaseModel):
     fator_risco_secundario: FatorRisco | None = None
     score_inicial_modelo_base: float = Field(ge=0, le=1)
     cliente_id: str | None = Field(None, max_length=100, description="Quem fez o Pix; usado para buscar feedbacks pendentes")
+    nome_destinatario: str | None = Field(
+        None, max_length=120, description="Nome de quem recebe o Pix; aparece na pergunta de conferência do modo demo"
+    )
     descricao_exibicao: str | None = Field(
         None, max_length=200, description='Texto curto para o pop-up de feedback, ex.: "Pix de R$ 1.000,00 para Lucas"'
     )
@@ -125,6 +129,11 @@ class RespostaUsuario(BaseModel):
     alternativa_id: str
 
 
+class Topico(BaseModel):
+    tom: Literal["alerta", "atencao", "ok"] = Field(description="Define a cor: alerta (vermelho), atencao (laranja), ok (verde)")
+    texto: str = Field(description="Trechos entre **asteriscos** devem ser destacados na cor do tom")
+
+
 class Resultado(BaseModel):
     sessao_id: str
     status: Literal["concluida", "coacao"]
@@ -134,7 +143,10 @@ class Resultado(BaseModel):
     nivel_risco: Literal["baixo", "moderado", "alto"] | None = None
     pontuacao_reconhecimento_padroes: int | None = None
     explicacao_gerada: str
-    fonte_explicacao: Literal["gemini", "template", "seguranca"]
+    explicacao_topicos: list[Topico] | None = Field(
+        None, description="Texto final em tópicos (modo demo). Sem tópicos, exiba explicacao_gerada em parágrafos"
+    )
+    fonte_explicacao: Literal["gemini", "template", "seguranca", "demo"]
     versao_modelo: str | None = None
 
 
@@ -171,7 +183,24 @@ def _respondidas(sessao: dict) -> int:
     return sum(1 for n in range(1, TOTAL_PERGUNTAS + 1) if sessao.get(f"pergunta_{n}_resposta"))
 
 
+def _demo(sessao: dict) -> bool:
+    return sessao.get("modo") == "demo"
+
+
+def _alternativa(sessao: dict, pergunta_id: str, alternativa_id: str):
+    """(multiplicador, coacao) da alternativa escolhida; KeyError se não existir."""
+    if _demo(sessao):
+        demo.alternativa(pergunta_id, alternativa_id)
+        return None, False
+    alt = carregar_banco().por_id[pergunta_id].alternativa(alternativa_id)
+    return alt.multiplicador, alt.coacao
+
+
 def _registrar_pergunta(sessao: dict, n: int) -> tuple[dict, PerguntaPublica]:
+    if _demo(sessao):
+        pergunta = demo.pergunta(n, sessao.get("nome_destinatario"))
+        campos = {f"pergunta_{n}_id": pergunta["id"], f"pergunta_{n}_dimensao": pergunta["dimensao"]}
+        return campos, PerguntaPublica(**pergunta)
     pergunta = seletor().proxima_pergunta(
         _perguntas_feitas(sessao), sessao["fator_risco_principal"], sessao["fator_risco_secundario"]
     )
@@ -205,6 +234,7 @@ def _resultado(sessao: dict) -> Resultado:
         nivel_risco=sessao["nivel_risco"],
         pontuacao_reconhecimento_padroes=sessao["pontuacao_reconhecimento_padroes"],
         explicacao_gerada=sessao["explicacao_gerada"],
+        explicacao_topicos=json.loads(sessao["explicacao_topicos"]) if sessao.get("explicacao_topicos") else None,
         fonte_explicacao=sessao["fonte_explicacao"],
         versao_modelo=sessao["versao_modelo"],
     )
@@ -214,8 +244,26 @@ def _agora() -> datetime:
     return datetime.now(timezone.utc)
 
 
+def _concluir_demo(sessao_id: str, sessao: dict) -> None:
+    """Modo demo: resultado mockado a partir das respostas, sem classificador nem Gemini."""
+    respostas = [(sessao[f"pergunta_{n}_id"], sessao[f"pergunta_{n}_resposta"]) for n in range(1, TOTAL_PERGUNTAS + 1)]
+    r = demo.resultado(respostas)
+    armazenamento().atualizar(sessao_id, {
+        "status": "concluida",
+        "concluida_em": _agora().isoformat(),
+        "score_refinado": r["score_refinado"],
+        "nivel_risco": r["nivel_risco"],
+        "explicacao_gerada": r["texto"],
+        "explicacao_topicos": json.dumps(r["topicos"], ensure_ascii=False),
+        "fonte_explicacao": "demo",
+        "versao_modelo": demo.VERSAO_MODELO_DEMO,
+    })
+
+
 def _concluir(sessao_id: str, sessao: dict) -> None:
     """Calcula score e explicação a partir das 3 respostas e encerra a sessão."""
+    if _demo(sessao):
+        return _concluir_demo(sessao_id, sessao)
     qa = _perguntas_respostas(sessao)
     sessao["pontuacao_reconhecimento_padroes"] = sum(q["protetora"] for q in qa)
 
@@ -252,12 +300,13 @@ def criar_sessao(situacao: SituacaoInicial, _: str = Depends(autenticar)):
         dados["desvio_valor_padrao"] = round((dados["valor_transacao"] - media) / media, 4)
     dados["sinalizador_coacao_fisica"] = False
     dados["feedback_cliente"] = "sem_resposta"  # até o cliente responder o pop-up
+    dados["modo"] = "demo" if modo_demo() else "real"  # fixado na criação: trocar o .env não quebra sessões em andamento
 
     sessao_id = str(uuid.uuid4())
     campos, pergunta = _registrar_pergunta(dados, 1)
     armazenamento().criar(sessao_id, {
         **dados, **campos, "status": "em_andamento",
-        "versao_banco_perguntas": carregar_banco().versao,
+        "versao_banco_perguntas": demo.versao() if dados["modo"] == "demo" else carregar_banco().versao,
     })
     return RespostaEtapa(sessao_id=sessao_id, status="em_andamento", pergunta=pergunta, progresso=Progresso(atual=1))
 
@@ -280,13 +329,13 @@ def responder(sessao_id: str, resposta: RespostaUsuario, _: str = Depends(autent
     if resposta.pergunta_id != esperada:
         raise HTTPException(409, f"Pergunta atual é {esperada}")
     try:
-        alt = carregar_banco().por_id[esperada].alternativa(resposta.alternativa_id)
+        multiplicador, coacao = _alternativa(sessao, esperada, resposta.alternativa_id)
     except KeyError:
         raise HTTPException(422, "Alternativa inválida para esta pergunta")
 
-    campos = {f"pergunta_{n}_resposta": alt.id, f"pergunta_{n}_multiplicador": alt.multiplicador}
+    campos = {f"pergunta_{n}_resposta": resposta.alternativa_id, f"pergunta_{n}_multiplicador": multiplicador}
 
-    if alt.coacao:
+    if coacao:
         texto, fonte = gemini.gerar_explicacao(sessao, [], None, coacao=True)
         armazenamento().atualizar(sessao_id, {
             **campos, "status": "coacao", "sinalizador_coacao_fisica": True,
@@ -373,4 +422,5 @@ def saude():
         "versao_modelo": modelo.versao,
         "versao_banco_perguntas": carregar_banco().versao,
         "gemini_configurado": bool(obter("GEMINI_API_KEY")),
+        "modo_demo": modo_demo(),
     }

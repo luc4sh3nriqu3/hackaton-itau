@@ -37,9 +37,12 @@
 </div>
 
 <script src="app.js"></script>
+<script src="triagem.js"></script>
+<script src="feedback/feedback.js"></script>
 <script>
   const dados = lerTransferencia();
   if (!dados.nome || !dados.valor) irPara("destinatario.html");
+  else registrarTransferenciaRealizada(dados); // na próxima visita à home aparece o pop-up de feedback
 
   document.getElementById("valor").textContent = formatarMoeda(dados.valor);
   document.getElementById("nome").textContent = dados.nome;
