@@ -1,5 +1,6 @@
 # hackaton-itau · espera.ai
 
+**Protótipo desenvolvido no Hackathon Itaú 2026. Não é um produto oficial do Itaú.** <br>
 Protótipo de app bancário (pasta `MVP/`) integrado a um serviço de **triagem educativa de golpes do Pix** (pasta `servico/`). <br>
 ▶️ [Vídeo Demonstrativo](https://www.youtube.com/watch?v=zCMpnO325g0)
 
