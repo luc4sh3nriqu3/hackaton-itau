@@ -1,7 +1,7 @@
 # hackaton-itau · espera.ai
 
 Protótipo de app bancário (pasta `MVP/`) integrado a um serviço de **triagem educativa de golpes do Pix** (pasta `servico/`).
-<a src="https://www.youtube.com/watch?v=zCMpnO325g0">Vídeo Demonstrativo</a>
+▶️ [Vídeo Demonstrativo](https://www.youtube.com/watch?v=zCMpnO325g0)
 
 **Como funciona:**
 1. Quando uma transferência Pix foge do padrão do cliente, o app mostra uma **página de alerta** com os pontos de atenção. O cliente pode seguir direto ou fazer a avaliação com a **espera.ai**.
