@@ -1,6 +1,6 @@
 # hackaton-itau · espera.ai
 
-Protótipo de app bancário (pasta `MVP/`) integrado a um serviço de **triagem educativa de golpes do Pix** (pasta `servico/`).
+Protótipo de app bancário (pasta `MVP/`) integrado a um serviço de **triagem educativa de golpes do Pix** (pasta `servico/`). <br>
 ▶️ [Vídeo Demonstrativo](https://www.youtube.com/watch?v=zCMpnO325g0)
 
 **Como funciona:**
